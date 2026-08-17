@@ -13,7 +13,7 @@ ANDROID_LIB_BUILD_DIR=$BUILD_DIR/android/release
 
 export SIGNING_DISABLED="true"
 export OSSRH_GROUP_ID="com.migeran.libgodot"
-export GODOT_VERSION_STATUS="migeran.2"
+export GODOT_VERSION_STATUS="preeternal.1"
 
 ./build_libgodot.sh --no-target --host-rebuild --host-release --update-api
 ./build_libgodot.sh --target ios --release --host-release
