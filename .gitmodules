@@ -1,12 +1,15 @@
 [submodule "godot"]
 	path = godot
-	url = ../godot
+	url = https://github.com/migeran/godot.git
+
 [submodule "SwiftGodot"]
 	path = SwiftGodot
-	url = ../SwiftGodot
+	url = https://github.com/migeran/SwiftGodot.git
+
 [submodule "SwiftGodotKit"]
 	path = SwiftGodotKit
-	url = ../SwiftGodotKit
+	url = https://github.com/migeran/SwiftGodotKit.git
+
 [submodule "godot-cpp"]
 	path = godot-cpp
-	url = ../godot-cpp
+	url = https://github.com/migeran/godot-cpp.git

@@ -52,3 +52,4 @@ cd $BUILD_GODOT_CPP_ANDROID_DIR/release
 zip -r $PREBUILT_TARGET_DIR/godot-cpp-android.zip godot-cpp-android
 
 cp -vf $ANDROID_LIB_BUILD_DIR/libgodot-android.zip $PREBUILT_TARGET_DIR
+cp -vf $BASE_DIR/godot/bin/android-template-release-native-symbols.zip $PREBUILT_TARGET_DIR/libgodot-android-native-symbols.zip

@@ -198,7 +198,9 @@ then
     # Release build
     if [ "$target_platform" = "android" ]
     then
-        target_build_options="$target_build_options debug_symbols=yes optimize=speed_trace lto=none"
+        # Keep symbols for crash symbolication, but let Gradle strip them from the
+        # distributed AAR and emit a separate native-symbols archive instead.
+        target_build_options="$target_build_options debug_symbols=yes separate_debug_symbols=yes optimize=speed_trace lto=none"
     else
         target_build_options="$target_build_options optimize=speed_trace lto=full"
     fi

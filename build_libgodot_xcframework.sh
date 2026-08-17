@@ -137,7 +137,9 @@ xcodebuild -create-xcframework \
 
 if [ "$target" = "template_release" ]
 then
-    find "$tmp_dir/libgodot.xcframework/ios-arm64" -name 'libgodot' | grep 'libgodot\.framework/libgodot$' | xargs strip -u -r
+    # Keep public symbols required by the bridge and move debugging information
+    # to the dSYMs already bundled alongside the release framework slices.
+    find "$tmp_dir/libgodot.xcframework" -name 'libgodot' | grep 'libgodot\.framework/libgodot$' | xargs strip -x
 fi
 
 BUILD_LIBGODOT_TARGET_DIR="$BUILD_DIR/libgodot/$build_type"
