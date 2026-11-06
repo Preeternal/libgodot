@@ -44,6 +44,7 @@ mkdir -p $PREBUILT_TARGET_DIR
 
 cd $BUILD_DIR/libgodot/release
 zip -r $PREBUILT_TARGET_DIR/libgodot.xcframework.zip libgodot.xcframework
+cp renderer-slices.json "$PREBUILT_TARGET_DIR/"
 
 cd $BUILD_DIR/godot-cpp/release
 zip -r $PREBUILT_TARGET_DIR/libgodot-cpp.xcframework.zip libgodot-cpp.xcframework

@@ -64,6 +64,7 @@ jobs:
           python3 tools/stage_public_headers.py build/public-headers
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ios_renderers.py -v
 
       - name: Compile public C ABI header
         shell: bash

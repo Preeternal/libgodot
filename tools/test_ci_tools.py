@@ -20,12 +20,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ArtifactsTest(unittest.TestCase):
-    def test_ios_packaging_requires_sdl_providers_before_framework_build(self):
+    def test_ios_packaging_requires_sdl_and_metal_before_framework_build(self):
         # Exercise the packaging script with a real validator and inert native tools.
         # No compiler, SCons or xcodebuild is executed by this fixture.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shutil.copy2(ROOT / "build_libgodot_xcframework.sh", root)
+            (root / "tools").mkdir()
+            shutil.copy2(ROOT / "tools/check_ios_renderers.py", root / "tools")
             checker = root / "godot/tests/libgodot/check_library.py"
             checker.parent.mkdir(parents=True)
             shutil.copy2(ROOT / "godot/tests/libgodot/check_library.py", checker)
@@ -58,18 +60,22 @@ class ArtifactsTest(unittest.TestCase):
             env = dict(os.environ, PATH=str(commands) + os.pathsep + os.environ["PATH"],
                        SDL_TEST_SYMBOLS=str(symbols), SDL_TEST_LINK_MARKER=str(marker))
             exports = "0000 T _libgodot_create_godot_instance\n0000 T _libgodot_destroy_godot_instance\n"
+            metal = "0000 T __ZN26RenderingDeviceDriverMetal10initializeEv\n"
+            metal += "0000 T __ZN27RenderingContextDriverMetal10initializeEv\n"
             sdl = ("SDL_IsTablet", "SDL_IsTV", "SDL_IsIPad", "SDL_IsAppleTV")
-            for missing in (("SDL_IsIPad", "SDL_IsAppleTV"), ("SDL_IsAppleTV",), ()):
-                with self.subTest(missing=missing):
+            for missing, have_metal in ((("SDL_IsIPad", "SDL_IsAppleTV"), True),
+                                        (("SDL_IsAppleTV",), True), ((), False), ((), True)):
+                with self.subTest(missing=missing, have_metal=have_metal):
                     marker.unlink(missing_ok=True)
-                    symbols.write_text(exports + "".join(
+                    symbols.write_text(exports + (metal if have_metal else "") + "".join(
                         f"{' U' if name in missing else '0000 T'} _{name}\n" for name in sdl))
                     result = subprocess.run(["/bin/bash", str(root / "build_libgodot_xcframework.sh"),
                                              "--target", "template_release", "--no-sim"],
                                             env=env, capture_output=True, text=True)
-                    if missing:
+                    if missing or not have_metal:
                         self.assertNotEqual(result.returncode, 0)
-                        self.assertIn("Missing defined iOS SDL symbols", result.stderr)
+                        self.assertIn("Missing defined iOS SDL symbols" if missing else
+                                      "Missing defined metal driver methods", result.stderr)
                         self.assertFalse(marker.exists(), "Invalid archive reached framework build")
                     else:
                         self.assertEqual(result.returncode, 77, result.stdout + result.stderr)

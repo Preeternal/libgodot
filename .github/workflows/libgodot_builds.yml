@@ -44,6 +44,7 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py \
             ArtifactsTest.test_ndk_query_does_not_import_engine_dependencies -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ios_renderers.py -v
       - uses: actions/cache/restore@v6
         id: cache
         with:
@@ -109,11 +110,13 @@ jobs:
             runner: macos-26
             platform: ios
             simulator: false
+            metal: 'yes'
           - id: ios-simulator
             name: iOS arm64 simulator release library
             runner: macos-26
             platform: ios
             simulator: true
+            metal: 'no'
           - id: macos
             name: macOS arm64 debug shared library
             runner: macos-26
@@ -268,6 +271,11 @@ jobs:
               --require-ios-sdl \
               --revision "$(git -C godot rev-parse HEAD)" --library "$library" \
               --symbols "$RESULTS/symbols.txt" --manifest "$RESULTS/manifest.json"
+            slice_name=device
+            if [[ '${{ matrix.simulator }}' == 'true' ]]; then slice_name=simulator; fi
+            nm -U "$library" > "$RESULTS/renderer-symbols.txt"
+            python3 tools/check_ios_renderers.py --library "$library" --slice "$slice_name" \
+              --symbols "$RESULTS/renderer-symbols.txt" --manifest "$RESULTS/renderer-manifest.json"
           else
             library="$RESULTS/libgodot.macos.template_debug.arm64.dylib"
             test "$(lipo -archs "$library")" = arm64
@@ -288,7 +296,7 @@ jobs:
               flags='engine: platform=android arch=${{ matrix.arch }} target=template_release library_type=shared_library production=yes debug_symbols=yes separate_debug_symbols=yes optimize=speed_trace lto=none opengl3=yes vulkan=yes swappy=no; shared host API; --no-host'
               ;;
             ios)
-              flags='engine: platform=ios arch=arm64 target=template_release library_type=static_library production=yes optimize=speed_trace lto=full opengl3=yes vulkan=no metal=yes sdl=yes builtin_sdl=yes ios_simulator=${{ matrix.simulator }}'
+              flags='engine: platform=ios arch=arm64 target=template_release library_type=static_library production=yes optimize=speed_trace lto=full opengl3=yes vulkan=no metal=${{ matrix.metal }} sdl=yes builtin_sdl=yes ios_simulator=${{ matrix.simulator }}'
               ;;
             macos)
               flags='engine: platform=macos arch=arm64 target=template_debug library_type=shared_library dev_build=no debug_symbols=no vulkan=yes use_volk=yes metal=yes accesskit=yes angle=no'
@@ -481,6 +489,8 @@ jobs:
               --platform ios --target template_release --library-type static_library \
               --revision "$(git -C godot rev-parse HEAD)" --library "$library" \
               --symbols "ci-input/$slice/symbols.txt" --manifest "ci-input/$slice/manifest.json"
+            python3 tools/check_ios_renderers.py --verify --library "$library" --slice "$slice" \
+              --symbols "ci-input/$slice/renderer-symbols.txt" --manifest "ci-input/$slice/renderer-manifest.json"
           done
           cmp ci-input/device/extension_api.json ci-input/simulator/extension_api.json
           cmp ci-input/device/gdextension_interface.h ci-input/simulator/gdextension_interface.h
@@ -502,6 +512,9 @@ jobs:
           ./build_godotcpp_xcframework.sh --target template_release 2>&1 | tee godot-cpp-framework.log
           test -d build/libgodot/release/libgodot.xcframework
           test -d build/godot-cpp/release/libgodot-cpp.xcframework
+          python3 tools/check_ios_renderers.py --verify \
+            --xcframework build/libgodot/release/libgodot.xcframework \
+            --manifest build/libgodot/release/renderer-slices.json
           xcodebuild -version > toolchain.txt
 
       - name: Archive and verify final iOS packages
@@ -509,6 +522,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ci-results/ios-packages
+          cp build/libgodot/release/renderer-slices.json ci-results/ios-packages/
           ditto -c -k --keepParent build/libgodot/release/libgodot.xcframework \
             ci-results/ios-packages/libgodot.xcframework.zip
           ditto -c -k --keepParent build/godot-cpp/release/libgodot-cpp.xcframework \
@@ -517,7 +531,7 @@ jobs:
           cp ci-input/device/artifacts-manifest.json ci-results/ios-packages/device-provenance.json
           cp ci-input/simulator/artifacts-manifest.json ci-results/ios-packages/simulator-provenance.json
           python3 tools/artifact_manifest.py ci-results/ios-packages --profile ios-packages \
-            --flags 'build_libgodot_xcframework.sh --target template_release; build_godotcpp_xcframework.sh --target template_release; unsigned arm64 device and arm64 simulator engine; universal simulator godot-cpp'
+            --flags 'build_libgodot_xcframework.sh --target template_release; build_godotcpp_xcframework.sh --target template_release; device Metal/Mobile, simulator OpenGL/Compatibility; unsigned arm64 device and arm64 simulator engine; universal simulator godot-cpp'
 
       - name: Save iOS binding cache
         uses: actions/cache/save@v6

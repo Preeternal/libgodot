@@ -92,11 +92,14 @@ def main() -> None:
         "build_scripts_sha256": {name: digest(ROOT / name) for name in
             ("build_libgodot.sh", "build_libgodot_xcframework.sh", "build_godotcpp_android.sh",
              "build_godotcpp_xcframework.sh", "tools/prepare_godotcpp_api.py",
-             "tools/check_android_cpp_abi.py")},
+             "tools/check_android_cpp_abi.py", "tools/check_ios_renderers.py")},
         "contract_sha256": contract,
         "debug_symbols": "See file inventory: Android unstripped native libraries; iOS framework dSYM directories",
         "files": inventory(args.directory),
     }
+    if args.profile.startswith("ios") or (args.directory / "renderer-slices.json").is_file():
+        evidence = "renderer-slices.json" if (args.directory / "renderer-slices.json").is_file() else "renderer-manifest.json"
+        manifest["renderer_evidence"] = json.loads((args.directory / evidence).read_text())
     (args.directory / "artifacts-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     verify(args.directory)
     print(f"Artifact manifest written and verified: {args.directory}")

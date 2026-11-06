@@ -94,6 +94,22 @@ ARM32 headers with ARM64 libraries can corrupt memory. Packaging checks compare
 each ABI's generated storage and C++ `sizeof` values with the selected API dump.
 The SDK uses single precision (`float_32` / `float_64`).
 
+### iOS renderer policy
+
+Device builds use Metal/Mobile. Simulator builds use OpenGL ES 3/Compatibility
+and explicitly set `metal=no`. Hosts must select the driver and rendering method
+before creating the engine instance:
+
+| Target | Rendering driver | Rendering method | Native layer |
+| --- | --- | --- | --- |
+| iPhone/iPad device | `metal` | `mobile` | `CAMetalLayer` |
+| iOS Simulator | `opengl3` | `gl_compatibility` | `CAEAGLLayer` |
+
+`renderer-slices.json` accompanies packaged frameworks with binary hashes,
+architectures, Mach-O platform/minimum OS, linked frameworks and compiled driver
+evidence. Runtime remains `UNVERIFIED` until tested separately for each target.
+Simulator Compatibility results do not establish device Metal correctness or speed.
+
 ## Migeran LibGodot Design
 
 The core idea of the LibGodot feature is to build upon Godot's strong extension capabilities: its modularity, powerful type system and the GDExtension API.
