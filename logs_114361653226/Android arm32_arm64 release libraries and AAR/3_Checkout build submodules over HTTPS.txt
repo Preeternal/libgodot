@@ -1,0 +1,19 @@
+﻿2026-11-06T11:02:42.4926361Z ##[group]Run set -euo pipefail
+2026-11-06T11:02:42.4926796Z [36;1mset -euo pipefail[0m
+2026-11-06T11:02:42.4927247Z [36;1mgit config --global url."https://github.com/".insteadOf git@github.com:[0m
+2026-11-06T11:02:42.4927710Z [36;1mgit submodule sync -- godot godot-cpp[0m
+2026-11-06T11:02:42.4928077Z [36;1mgit submodule update --init godot godot-cpp[0m
+2026-11-06T11:02:42.4928435Z [36;1mgit submodule status -- godot godot-cpp[0m
+2026-11-06T11:02:42.4954512Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-06T11:02:42.4954898Z env:
+2026-11-06T11:02:42.4955517Z   SCONS_VERSION: 4.10.1
+2026-11-06T11:02:42.4955768Z   RESULTS: ci-results/android
+2026-11-06T11:02:42.4956020Z ##[endgroup]
+2026-11-06T11:02:42.5486778Z Submodule 'godot' (git@github.com:Preeternal/godot.git) registered for path 'godot'
+2026-11-06T11:02:42.5492390Z Submodule 'godot-cpp' (https://github.com/migeran/godot-cpp.git) registered for path 'godot-cpp'
+2026-11-06T11:02:42.5520291Z Cloning into '/home/runner/work/libgodot/libgodot/godot'...
+2026-11-06T11:03:57.9489751Z Cloning into '/home/runner/work/libgodot/libgodot/godot-cpp'...
+2026-11-06T11:04:01.2629124Z Submodule path 'godot': checked out '191fc5bdc3cab0545c8ee50ef79fc3365237510c'
+2026-11-06T11:04:01.3125754Z Submodule path 'godot-cpp': checked out 'ace561a285e8a2374e3d61457032d2e14afd5d03'
+2026-11-06T11:04:02.5204433Z  191fc5bdc3cab0545c8ee50ef79fc3365237510c godot (4.4-stable-12355-g191fc5bdc3)
+2026-11-06T11:04:02.5328708Z  ace561a285e8a2374e3d61457032d2e14afd5d03 godot-cpp (godot-3.3.3-stable-1242-gace561a)

@@ -1,0 +1,24 @@
+﻿2026-11-06T11:04:02.6889036Z ##[group]Run python -m pip install --disable-pip-version-check "scons==${SCONS_VERSION}"
+2026-11-06T11:04:02.6889691Z [36;1mpython -m pip install --disable-pip-version-check "scons==${SCONS_VERSION}"[0m
+2026-11-06T11:04:02.6890118Z [36;1mscons --version[0m
+2026-11-06T11:04:02.6926115Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-06T11:04:02.6926496Z env:
+2026-11-06T11:04:02.6926691Z   SCONS_VERSION: 4.10.1
+2026-11-06T11:04:02.6926927Z   RESULTS: ci-results/android
+2026-11-06T11:04:02.6927243Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:02.6927695Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib/pkgconfig
+2026-11-06T11:04:02.6928131Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:02.6928512Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:02.6928901Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:02.6929321Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib
+2026-11-06T11:04:02.6929687Z ##[endgroup]
+2026-11-06T11:04:04.8325568Z Collecting scons==4.10.1
+2026-11-06T11:04:04.8875930Z   Downloading scons-4.10.1-py3-none-any.whl.metadata (9.7 kB)
+2026-11-06T11:04:04.9003114Z Downloading scons-4.10.1-py3-none-any.whl (4.1 MB)
+2026-11-06T11:04:04.9558024Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.1/4.1 MB 125.9 MB/s  0:00:00
+2026-11-06T11:04:05.0905883Z Installing collected packages: scons
+2026-11-06T11:04:05.7733399Z Successfully installed scons-4.10.1
+2026-11-06T11:04:05.9535345Z SCons by Steven Knight et al.:
+2026-11-06T11:04:05.9536497Z 	SCons: v4.10.1.055b01f429d58b686701a56df863a817c36bb103, Sun, 16 Nov 2025 14:18:20 -0700, by bdbaddog on M1Dog2021
+2026-11-06T11:04:05.9537608Z 	SCons path: ['/opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/SCons']
+2026-11-06T11:04:05.9538335Z Copyright (c) 2001 - 2025 The SCons Foundation

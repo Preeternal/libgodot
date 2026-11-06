@@ -8,6 +8,8 @@ permissions:
 
 env:
   SCONS_VERSION: 4.10.1
+  SCONS_CACHE: ${{ github.workspace }}/.scons_cache
+  PYTHONHASHSEED: '0'
 
 jobs:
   contract:
@@ -71,6 +73,14 @@ jobs:
             clang -arch arm64 -std=c11 -Wall -Wextra -Werror \
             -Ilibgodot_framework -x c -fsyntax-only -
 
+      - name: Restore binding object cache
+        uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: .scons_cache
+          key: l1-v2-contract-cpp-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: l1-v2-contract-cpp-${{ runner.arch }}-
+
       - name: Generate and compile godot-cpp bindings
         shell: bash
         run: |
@@ -78,7 +88,7 @@ jobs:
           scons -C godot-cpp \
             gdextension_dir="$GITHUB_WORKSPACE/build/gdextension" \
             custom_api_file="$GITHUB_WORKSPACE/build/gdextension/godotcpp_extension_api.json" \
-            platform=macos arch=arm64 target=template_debug generate_bindings=yes -j2 \
+            platform=macos arch=arm64 target=template_debug generate_bindings=yes -j"$(sysctl -n hw.logicalcpu)" \
             2>&1 | tee godot-cpp.log
           clang++ -arch arm64 -std=c++17 -Wall -Wextra -Werror -fsyntax-only \
             -Ilibgodot_framework -Ilibgodot_framework/libgodot \
@@ -119,6 +129,13 @@ jobs:
             lifecycle.log dns-shutdown.log ci-results/contract/
           python3 tools/artifact_manifest.py ci-results/contract --profile contract \
             --flags 'macOS arm64 template_debug bindings; generated public C ABI lifecycle_host; same-run library; -Wall -Wextra -Werror; third-party headers -isystem'
+
+      - name: Save binding object cache
+        uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-contract-cpp-${{ runner.arch }}-${{ github.sha }}
 
       - name: Upload contract diagnostics
         if: always()

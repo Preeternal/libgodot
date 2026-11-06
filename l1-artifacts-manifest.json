@@ -1,18 +1,18 @@
 {
   "schema": "libgodot-l1-artifacts/v1",
-  "status": "fix-01-prepared-awaiting-owner-review-and-ci",
+  "status": "fix-02-engine-updated-ci-repaired-awaiting-owner-review-and-ci",
   "created_at": "2026-11-06",
   "repository": {
     "path": "/Users/preeternal/Projects/libgodot",
     "branch": "libgodot_47",
-    "superproject_commit": "e1832f5c0cd025e7c0bc997e0f43421cc7daf923",
+    "superproject_commit": "40fe27d98e4624b25e4f5334ba5f80d7c1f90418",
     "origin": "git@github.com:Preeternal/libgodot.git"
   },
   "engine": {
     "submodule_url": "git@github.com:Preeternal/godot.git",
-    "commit": "191fc5bdc3cab0545c8ee50ef79fc3365237510c",
-    "parent": "45294a7cf43d962f0f7617fd2d7be7606132d3be",
-    "version": "4.7.2.stable.custom_build.191fc5bdc"
+    "commit": "fe6b0e364d4ea424c09981ac7286ce1d1ab7142d",
+    "parent": "6853248b04f3df0d7e9156adefdc49e4c0b9da60",
+    "version": "4.7.2.stable.custom_build.fe6b0e364"
   },
   "godot_cpp": {
     "submodule_url": "https://github.com/migeran/godot-cpp.git",
@@ -48,6 +48,7 @@
   "artifacts": {
     "macos": {
       "status": "PASS-local-compatibility",
+      "generated_api_engine_commit": "fe6b0e364d4ea424c09981ac7286ce1d1ab7142d",
       "path": "godot-cpp/bin/libgodot-cpp.macos.template_debug.arm64.a",
       "sha256": "7658909f64ebae9ea3cf2c18d5377b4006f91cfc0f1ef8cd565f466e857984b6",
       "bytes": 49809032
@@ -78,6 +79,7 @@
     "generator": "tools/artifact_manifest.py",
     "verification": "python3 tools/artifact_manifest.py ARTIFACT_DIRECTORY --verify",
     "output": "artifacts-manifest.json in each CI artifact",
+    "pipeline": "one shared macOS host/API job; parallel Android ABI jobs; same-run native and package provenance",
     "identity": "Separate libgodot, godot and godot_cpp SHAs plus run ID/attempt",
     "coverage": "All uploaded files, native ABI libraries, AAR, C++ headers/libraries, final XCFramework zip archives and included dSYMs"
   },

@@ -1,0 +1,24 @@
+﻿2026-11-06T11:04:20.6920431Z ##[group]Run actions/cache@v6
+2026-11-06T11:04:20.6920719Z with:
+2026-11-06T11:04:20.6920914Z   path: .scons_cache
+2026-11-06T11:04:20.6921241Z   key: libgodot-4.7-android-40fe27d98e4624b25e4f5334ba5f80d7c1f90418
+2026-11-06T11:04:20.6921628Z   restore-keys: libgodot-4.7-android-
+
+2026-11-06T11:04:20.6921907Z   enableCrossOsArchive: false
+2026-11-06T11:04:20.6922156Z   fail-on-cache-miss: false
+2026-11-06T11:04:20.6922388Z   lookup-only: false
+2026-11-06T11:04:20.6922594Z   save-always: false
+2026-11-06T11:04:20.6922789Z env:
+2026-11-06T11:04:20.6922972Z   SCONS_VERSION: 4.10.1
+2026-11-06T11:04:20.6923194Z   RESULTS: ci-results/android
+2026-11-06T11:04:20.6923497Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:20.6923945Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib/pkgconfig
+2026-11-06T11:04:20.6924393Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:20.6924782Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:20.6925722Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-06T11:04:20.6926112Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib
+2026-11-06T11:04:20.6926704Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+2026-11-06T11:04:20.6927412Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+2026-11-06T11:04:20.6927800Z   MAVEN_ARGS: -ntp
+2026-11-06T11:04:20.6928001Z ##[endgroup]
+2026-11-06T11:04:20.8975514Z Cache not found for input keys: libgodot-4.7-android-40fe27d98e4624b25e4f5334ba5f80d7c1f90418, libgodot-4.7-android-

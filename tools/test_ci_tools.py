@@ -11,12 +11,22 @@ from unittest import mock
 
 import artifact_manifest
 from stage_public_headers import stage_headers
+from engine_config import ndk_version
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ArtifactsTest(unittest.TestCase):
+    def test_ndk_query_does_not_import_engine_dependencies(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = Path(tmp)
+            source = engine / "platform/android"
+            source.mkdir(parents=True)
+            (source / "detect.py").write_text('import nonexistent_engine_module\ndef get_ndk_version():\n    return "29.0.14206865"\n')
+            self.assertEqual(ndk_version(engine), "29.0.14206865")
+        self.assertRegex(ndk_version(ROOT / "godot"), r"^\d+\.\d+\.\d+$")
+
     def test_inventory_retains_both_abis_and_rejects_corruption(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

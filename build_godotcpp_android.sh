@@ -64,7 +64,7 @@ fi
 
 python3 "$BASE_DIR/tools/prepare_godotcpp_api.py" \
     "$BUILD_GDEXTENSION_DIR/extension_api.json" "$CUSTOM_API_FILE"
-ndk_version="$(python3 -c "import runpy; print(runpy.run_path('$GODOT_DIR/platform/android/detect.py')['get_ndk_version']())")"
+ndk_version="$(python3 "$BASE_DIR/tools/engine_config.py" "$GODOT_DIR")"
 export SCONSFLAGS="${SCONSFLAGS:-} ndk_version=$ndk_version gdextension_dir=$BUILD_GDEXTENSION_DIR"
 
 tmp_dir="$(mktemp -d)"

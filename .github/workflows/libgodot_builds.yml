@@ -11,9 +11,75 @@ permissions:
 
 env:
   SCONS_VERSION: 4.10.1
+  SCONS_CACHE: ${{ github.workspace }}/.scons_cache
+  PYTHONHASHSEED: '0'
 
 jobs:
+  host:
+    name: Generate shared API and macOS editor
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+      - name: Checkout exact build submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://github.com/".insteadOf git@github.com:
+          git submodule sync -- godot godot-cpp
+          git submodule update --init godot godot-cpp
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install "scons==${SCONS_VERSION}"
+        shell: bash
+      - name: Preflight build scripts and engine configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n build_libgodot.sh build_godotcpp_android.sh build_godotcpp_xcframework.sh
+          python3 tools/engine_config.py
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py \
+            ArtifactsTest.test_ndk_query_does_not_import_engine_dependencies -v
+      - uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: .scons_cache
+          key: l1-v2-host-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: l1-v2-host-${{ runner.arch }}-
+      - name: Install host dependency
+        working-directory: godot
+        shell: bash
+        run: |
+          python3 misc/scripts/install_accesskit.py
+          test -d bin/build_deps/accesskit/include
+      - name: Build once and generate contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-results/host
+          ./build_libgodot.sh --no-target --host-release --update-api 2>&1 | tee ci-results/host/build.log
+          python3 godot/tests/libgodot/check_api.py build/gdextension/extension_api.json
+          cp build/godot ci-results/host/godot-editor
+          cp build/gdextension/*.json build/gdextension/gdextension_interface.h ci-results/host/
+          python3 tools/artifact_manifest.py ci-results/host --profile host --flags 'macOS editor; use_volk=yes angle=no accesskit=yes; API dump'
+      - uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-host-${{ runner.arch }}-${{ github.sha }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: libgodot-host
+          path: ci-results/host/
+          retention-days: 14
+          compression-level: 1
+
   native:
+    needs: host
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
@@ -21,10 +87,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: android
-            name: Android arm32/arm64 release libraries and AAR
+          - id: android-arm64
+            name: Android arm64 release library
             runner: ubuntu-24.04
             platform: android
+            arch: arm64
+            abi: arm64-v8a
+            machine: AArch64
+            simulator: false
+          - id: android-arm32
+            name: Android arm32 release library
+            runner: ubuntu-24.04
+            platform: android
+            arch: arm32
+            abi: armeabi-v7a
+            machine: ARM
             simulator: false
           - id: ios-device
             name: iOS arm64 device release library
@@ -79,65 +156,44 @@ jobs:
           java-version: '17'
 
       - name: Install macOS AccessKit dependency
-        if: runner.os == 'macOS'
+        if: matrix.platform == 'macos'
         working-directory: godot
         shell: bash
         run: |
           python3 misc/scripts/install_accesskit.py
           test -d bin/build_deps/accesskit/include
 
-      - name: Install Linux host build dependencies
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libx11-dev libxcursor-dev \
-            libxinerama-dev libgl1-mesa-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
-            libudev-dev libxi-dev libxrandr-dev libwayland-dev libembree-dev
-
       - name: Restore SCons cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
+        id: cache
         with:
           path: .scons_cache
-          key: libgodot-4.7-${{ matrix.id }}-${{ github.sha }}
+          key: l1-v2-${{ matrix.id }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: |
-            libgodot-4.7-${{ matrix.id }}-
+            l1-v2-${{ matrix.id }}-${{ runner.arch }}-
 
-      - name: Generate engine API and public header
+      - name: Download shared generated contract
+        uses: actions/download-artifact@v8
+        with:
+          name: libgodot-host
+          path: ci-input/host
+      - name: Verify and stage shared contract
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RESULTS"
-          ./build_libgodot.sh --no-target --host-rebuild --host-release --update-api \
-            2>&1 | tee "$RESULTS/host-api.log"
-          cp build/gdextension/extension_api.json "$RESULTS/"
-          cp build/gdextension/godotcpp_extension_api.json "$RESULTS/"
-          cp build/gdextension/gdextension_interface.h "$RESULTS/"
-          cp build/gdextension/gdextension_interface.json "$RESULTS/"
+          python3 tools/artifact_manifest.py ci-input/host --verify
+          mkdir -p build/gdextension "$RESULTS"
+          cp ci-input/host/*.json ci-input/host/gdextension_interface.h build/gdextension/
+          cp ci-input/host/*.json ci-input/host/gdextension_interface.h "$RESULTS/"
+          python3 tools/engine_config.py
 
-      - name: Build Android libraries and bindings
+      - name: Build one Android ABI
         if: matrix.platform == 'android'
         shell: bash
         run: |
           set -euo pipefail
-          for arch in arm64 arm32; do
-            ./build_libgodot.sh --target android --target-arch "$arch" \
-              --release --host-release 2>&1 | tee "$RESULTS/build-$arch.log"
-          done
-          ./build_godotcpp_android.sh --target template_release \
-            --target-arch-list 'arm64 arm32' 2>&1 | tee "$RESULTS/godot-cpp.log"
-
-          (cd godot/platform/android/java && ./gradlew --no-daemon :lib:assembleTemplateRelease \
-            -x :lib:compileGodotNativeLibsTemplateReleaseArm64) \
-            2>&1 | tee "$RESULTS/gradle-aar.log"
-          cp godot/platform/android/java/lib/build/outputs/aar/godot-lib.template_release.aar "$RESULTS/"
-          cp godot/bin/android-template-release-native-symbols.zip "$RESULTS/"
-          cp -a build/godot-cpp-android/release "$RESULTS/godot-cpp-android"
-          ndk_version="$(python3 -c "import runpy; print(runpy.run_path('godot/platform/android/detect.py')['get_ndk_version']())")"
-          ndk_bin="$ANDROID_HOME/ndk/$ndk_version/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          printf '%s\n' '#include <libgodot_android.h>' | \
-            "$ndk_bin/clang" --target=aarch64-linux-android24 -std=c11 -Wall -Wextra -Werror \
-            -I"$RESULTS/godot-cpp-android/godot-cpp-android/include" -x c -fsyntax-only -
+          ./build_libgodot.sh --no-host --target android --target-arch '${{ matrix.arch }}' \
+            --release --host-release 2>&1 | tee "$RESULTS/build.log"
 
       - name: Build iOS device or simulator library
         if: matrix.platform == 'ios'
@@ -150,7 +206,7 @@ jobs:
             simulator_args+=(--simulator)
             suffix='.simulator'
           fi
-          ./build_libgodot.sh --target ios "${simulator_args[@]}" \
+          ./build_libgodot.sh --no-host --target ios "${simulator_args[@]}" \
             --release --host-release 2>&1 | tee "$RESULTS/build.log"
           cp "godot/bin/libgodot.ios.template_release.arm64${suffix}.a" "$RESULTS/"
 
@@ -167,16 +223,16 @@ jobs:
               redirect_build_objects=no
           ) 2>&1 | tee "$RESULTS/build.log"
           cp godot/bin/libgodot.macos.template_debug.arm64.dylib "$RESULTS/"
-          cp build/godot "$RESULTS/godot-editor"
+          cp ci-input/host/godot-editor "$RESULTS/godot-editor"
 
       - name: Validate architecture, alignment and exports
         shell: bash
         run: |
           set -euo pipefail
           if [[ "${{ matrix.platform }}" == 'android' ]]; then
-            ndk_version="$(python3 -c "import runpy; print(runpy.run_path('godot/platform/android/detect.py')['get_ndk_version']())")"
+            ndk_version="$(python3 tools/engine_config.py)"
             ndk_bin="$ANDROID_HOME/ndk/$ndk_version/toolchains/llvm/prebuilt/linux-x86_64/bin"
-            for spec in 'arm64 arm64-v8a AArch64' 'arm32 armeabi-v7a ARM'; do
+            for spec in '${{ matrix.arch }} ${{ matrix.abi }} ${{ matrix.machine }}'; do
               read -r arch abi machine <<< "$spec"
               mkdir -p "$RESULTS/$abi"
               cp "build/android/release/$abi/libgodot_android.so" "$RESULTS/$abi/"
@@ -194,6 +250,7 @@ jobs:
                 --revision "$(git -C godot rev-parse HEAD)" --library "$library" \
                 --symbols "$RESULTS/$arch-symbols.txt" --manifest "$RESULTS/$abi/library-manifest.json"
             done
+            cp godot/bin/android-template-release-native-symbols.zip "$RESULTS/"
             "$ndk_bin/clang++" --version > "$RESULTS/toolchain.txt"
           elif [[ "${{ matrix.platform }}" == 'ios' ]]; then
             library="$(find "$RESULTS" -name 'libgodot.ios.*.a' -print -quit)"
@@ -226,7 +283,7 @@ jobs:
           set -euo pipefail
           case '${{ matrix.platform }}' in
             android)
-              flags='engine: platform=android arch=arm64,arm32 target=template_release library_type=shared_library production=yes debug_symbols=yes separate_debug_symbols=yes optimize=speed_trace lto=none opengl3=yes vulkan=yes swappy=no; godot-cpp: template_release generate_bindings=yes common engine NDK; Gradle :lib:assembleTemplateRelease'
+              flags='engine: platform=android arch=${{ matrix.arch }} target=template_release library_type=shared_library production=yes debug_symbols=yes separate_debug_symbols=yes optimize=speed_trace lto=none opengl3=yes vulkan=yes swappy=no; shared host API; --no-host'
               ;;
             ios)
               flags='engine: platform=ios arch=arm64 target=template_release library_type=static_library production=yes optimize=speed_trace lto=full opengl3=yes vulkan=no metal=yes ios_simulator=${{ matrix.simulator }}'
@@ -237,14 +294,122 @@ jobs:
           esac
           python3 tools/artifact_manifest.py "$RESULTS" --profile '${{ matrix.id }}' --flags "$flags"
 
+      - uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-${{ matrix.id }}-${{ runner.arch }}-${{ github.sha }}
+
       - name: Upload libraries, bindings and diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: libgodot-${{ matrix.id }}
           path: ${{ env.RESULTS }}/
+          compression-level: 1
           retention-days: 14
           if-no-files-found: warn
+
+  android-package:
+    name: Android AAR and C++ SDK
+    needs: native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      JAVA_VERSION: '17'
+      SIGNING_DISABLED: 'true'
+      OSSRH_GROUP_ID: com.migeran.libgodot
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+      - name: Checkout exact build submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://github.com/".insteadOf git@github.com:
+          git submodule sync -- godot godot-cpp
+          git submodule update --init godot godot-cpp
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install "scons==${SCONS_VERSION}"
+        shell: bash
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: .scons_cache
+          key: l1-v2-android-cpp-${{ github.sha }}
+          restore-keys: l1-v2-android-cpp-
+      - uses: actions/download-artifact@v8
+        with:
+          name: libgodot-android-arm64
+          path: ci-input/arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: libgodot-android-arm32
+          path: ci-input/arm32
+      - name: Verify and stage both native ABIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/gdextension ci-results/android
+          python3 tools/artifact_manifest.py ci-input/arm64 --verify
+          python3 tools/artifact_manifest.py ci-input/arm32 --verify
+          cmp ci-input/arm64/extension_api.json ci-input/arm32/extension_api.json
+          cp ci-input/arm64/*.json ci-input/arm64/gdextension_interface.h build/gdextension/
+          for spec in 'arm64 arm64-v8a' 'arm32 armeabi-v7a'; do
+            read -r arch abi <<< "$spec"
+            mkdir -p "godot/platform/android/java/lib/libs/release/$abi"
+            cp "ci-input/$arch/$abi/"*.so "godot/platform/android/java/lib/libs/release/$abi/"
+            cp -a "ci-input/$arch/$abi" ci-results/android/
+          done
+          cp ci-input/arm64/artifacts-manifest.json ci-results/android/arm64-provenance.json
+          cp ci-input/arm32/artifacts-manifest.json ci-results/android/arm32-provenance.json
+      - name: Install required Android toolchain on CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          ndk_version="$(python3 tools/engine_config.py)"
+          sdkmanager "ndk;$ndk_version" "platforms;android-36" "build-tools;36.1.0"
+      - name: Build bindings and assemble AAR without rebuilding native engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./build_godotcpp_android.sh --target template_release --target-arch-list 'arm64 arm32' \
+            2>&1 | tee ci-results/android/godot-cpp.log
+          (cd godot/platform/android/java && ./gradlew --no-daemon :lib:assembleTemplateRelease \
+            -x :lib:compileGodotNativeLibsTemplateReleaseArm64) 2>&1 | tee ci-results/android/gradle.log
+          cp godot/platform/android/java/lib/build/outputs/aar/godot-lib.template_release.aar ci-results/android/
+          cp -a build/godot-cpp-android/release ci-results/android/godot-cpp-android
+          ndk_version="$(python3 tools/engine_config.py)"
+          ndk_bin="$ANDROID_HOME/ndk/$ndk_version/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          printf '%s\n' '#include <libgodot_android.h>' | \
+            "$ndk_bin/clang" --target=aarch64-linux-android24 -std=c11 -Wall -Wextra -Werror \
+            -Ici-results/android/godot-cpp-android/godot-cpp-android/include -x c -fsyntax-only -
+          unzip -l ci-results/android/godot-lib.template_release.aar | tee ci-results/android/aar-files.txt
+          grep -q 'jni/arm64-v8a/libgodot_android.so' ci-results/android/aar-files.txt
+          grep -q 'jni/armeabi-v7a/libgodot_android.so' ci-results/android/aar-files.txt
+          cp ci-input/arm64/android-template-release-native-symbols.zip ci-results/android/arm64-native-symbols.zip
+          cp ci-input/arm32/android-template-release-native-symbols.zip ci-results/android/arm32-native-symbols.zip
+          python3 tools/artifact_manifest.py ci-results/android --profile android-package \
+            --flags 'AAR from verified arm32/arm64; godot-cpp template_release common engine NDK; no native rebuild'
+      - uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-android-cpp-${{ github.sha }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: libgodot-android
+          path: ci-results/android/
+          compression-level: 1
+          retention-days: 14
 
   ios-package:
     name: iOS frameworks and godot-cpp XCFramework
@@ -273,6 +438,14 @@ jobs:
       - name: Install SCons
         shell: bash
         run: python -m pip install --disable-pip-version-check "scons==${SCONS_VERSION}"
+
+      - name: Restore iOS binding cache
+        uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: .scons_cache
+          key: l1-v2-ios-cpp-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: l1-v2-ios-cpp-${{ runner.arch }}-
 
       - name: Download iOS native libraries
         uses: actions/download-artifact@v8
@@ -329,12 +502,20 @@ jobs:
           python3 tools/artifact_manifest.py ci-results/ios-packages --profile ios-packages \
             --flags 'build_libgodot_xcframework.sh --target template_release; build_godotcpp_xcframework.sh --target template_release; unsigned arm64 device and arm64 simulator engine; universal simulator godot-cpp'
 
+      - name: Save iOS binding cache
+        uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-ios-cpp-${{ runner.arch }}-${{ github.sha }}
+
       - name: Upload iOS packages
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: libgodot-ios-xcframeworks
           path: ci-results/ios-packages/
+          compression-level: 0
           retention-days: 14
           if-no-files-found: warn
 

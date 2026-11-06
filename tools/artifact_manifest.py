@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from engine_config import ndk_version
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +63,8 @@ def main() -> None:
     if not args.profile:
         parser.error("--profile is required when generating")
     args.directory.mkdir(parents=True, exist_ok=True)
-    tools = {"python": command("python3", "--version"), "scons": command("scons", "--version")}
+    tools = {"python": command("python3", "--version"), "scons": command("scons", "--version"),
+             "python_hash_seed": os.environ.get("PYTHONHASHSEED", "random")}
     if command("uname", "-s") == "Darwin":
         tools.update(xcode=command("xcodebuild", "-version"),
                      ios_sdk=command("xcrun", "--sdk", "iphoneos", "--show-sdk-version"),
@@ -70,8 +72,8 @@ def main() -> None:
                      macos_sdk=command("xcrun", "--sdk", "macosx", "--show-sdk-version"))
     else:
         tools["clang"] = command("clang", "--version")
-    if args.profile == "android":
-        tools["ndk"] = command("python3", "-c", "import runpy; print(runpy.run_path('godot/platform/android/detect.py')['get_ndk_version']())")
+    if args.profile.startswith("android"):
+        tools["ndk"] = ndk_version(ROOT / "godot")
         tools["java"] = command("java", "-version")
         tools["gradle_wrapper"] = (ROOT / "godot/platform/android/java/gradle/wrapper/gradle-wrapper.properties").read_text()
         tools["android_sdk_config"] = (ROOT / "godot/platform/android/java/app/config.gradle").read_text().split("ext.getExportPackageName")[0]
