@@ -241,7 +241,7 @@ jobs:
               "$ndk_bin/llvm-readelf" --file-header "$library" > "$RESULTS/$arch-architecture.txt"
               grep -q "$machine" "$RESULTS/$arch-architecture.txt"
               "$ndk_bin/llvm-readelf" -lW "$library" > "$RESULTS/$arch-program-headers.txt"
-              python3 tools/check_elf_alignment.py "$RESULTS/$arch-program-headers.txt"
+              python3 tools/check_elf_alignment.py "$RESULTS/$arch-program-headers.txt" --arch "$arch"
               "$ndk_bin/llvm-nm" --dynamic --defined-only "$library" > "$RESULTS/$arch-symbols.txt"
               grep -q 'libgodot_destroy_godot_instance' "$RESULTS/$arch-symbols.txt"
               grep -q 'libgodot_create_godot_instance_android' "$RESULTS/$arch-symbols.txt"

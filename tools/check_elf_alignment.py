@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
-"""Require 16 KiB alignment for every ELF LOAD segment."""
+"""Check ELF LOAD alignment: 16 KiB for Android arm64, 4 KiB for arm32."""
 
 from __future__ import annotations
 
+import argparse
 import re
-import sys
 from pathlib import Path
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print(f"usage: {sys.argv[0]} READelf_PROGRAM_HEADERS", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("program_headers", type=Path)
+    parser.add_argument("--arch", required=True, choices=("arm32", "arm64"))
+    args = parser.parse_args()
+    minimum = 0x4000 if args.arch == "arm64" else 0x1000
+    label = f"{args.arch} {minimum // 1024} KiB LOAD alignment"
 
     alignments = []
-    for line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+    for line in args.program_headers.read_text(encoding="utf-8").splitlines():
         if re.match(r"^\s*LOAD\s", line):
             alignments.append(int(line.split()[-1], 0))
-    if not alignments or min(alignments) < 0x4000:
-        print(f"16 KiB LOAD alignment check failed: {alignments}", file=sys.stderr)
+    if not alignments or min(alignments) < minimum:
+        print(f"{label} check failed: {alignments}")
         return 1
-    print(f"16 KiB LOAD alignment: PASS ({alignments})")
+    print(f"{label}: PASS ({alignments})")
     return 0
 
 

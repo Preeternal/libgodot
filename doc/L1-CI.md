@@ -11,6 +11,8 @@ and never build an editor. SCons caches are enabled for engine and godot-cpp,
 including saving completed objects after later packaging failures. This avoids
 the former repeated editor builds and sequential Android native builds without
 dropping native, ABI, alignment, packaging or lifecycle coverage.
+ELF LOAD alignment is ABI-specific: arm64 requires at least 16 KiB; arm32
+requires at least 4 KiB. Architecture, exports and manifest checks run for both.
 Python hash seed is fixed for stable generated C++ declaration ordering and
 cache keys; final already-compressed iOS archives are uploaded without a second
 compression pass.

@@ -84,7 +84,7 @@
     "coverage": "All uploaded files, native ABI libraries, AAR, C++ headers/libraries, final XCFramework zip archives and included dSYMs"
   },
   "open_gates": [
-    "execute CI for current SHA: Android arm64/arm32 libraries, AAR and 16 KiB alignment",
+    "execute CI for current SHA: Android arm64/arm32 libraries and AAR; LOAD alignment >=16 KiB for arm64 and >=4 KiB for arm32",
     "execute CI for current SHA: iOS device/simulator slices, framework linkage and module maps",
     "consumer/runtime/device first-frame and restart/detach checks",
     "owner review and CI result for this L1 candidate"

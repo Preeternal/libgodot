@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -18,6 +19,32 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ArtifactsTest(unittest.TestCase):
+    def test_elf_alignment_uses_abi_specific_minimum(self):
+        for arch, alignment, expected in (("arm32", 4096, 0), ("arm32", 16384, 0),
+                                           ("arm32", 2048, 1), ("arm64", 4096, 1),
+                                           ("arm64", 16384, 0), ("arm64", 65536, 0)):
+            with self.subTest(arch=arch, alignment=alignment), tempfile.TemporaryDirectory() as tmp:
+                headers = Path(tmp) / "program-headers.txt"
+                headers.write_text(f"  LOAD 0x0 0x0 0x0 0x100 0x100 R E {alignment:#x}\n" * 3)
+                result = subprocess.run([sys.executable, str(ROOT / "tools/check_elf_alignment.py"),
+                                         str(headers), "--arch", arch], capture_output=True, text=True)
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+
+    def test_elf_alignment_rejects_missing_load_segments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            headers = Path(tmp) / "program-headers.txt"
+            headers.write_text("Type Offset VirtAddr PhysAddr FileSiz MemSiz Flg Align\n")
+            for arch in ("arm32", "arm64"):
+                result = subprocess.run([sys.executable, str(ROOT / "tools/check_elf_alignment.py"),
+                                         str(headers), "--arch", arch], capture_output=True)
+                self.assertEqual(result.returncode, 1)
+
+    def test_elf_alignment_requires_explicit_supported_architecture(self):
+        for arguments in ([], ["--arch", "unknown"]):
+            result = subprocess.run([sys.executable, str(ROOT / "tools/check_elf_alignment.py"),
+                                     "unused.txt", *arguments], capture_output=True)
+            self.assertEqual(result.returncode, 2)
+
     def test_ndk_query_does_not_import_engine_dependencies(self):
         with tempfile.TemporaryDirectory() as tmp:
             engine = Path(tmp)
