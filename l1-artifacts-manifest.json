@@ -1,19 +1,35 @@
 {
   "schema": "libgodot-l1-artifacts/v1",
-  "status": "fix-04-pin-updated-rebuild-ci-and-owner-review-required",
+  "status": "L1-closed-by-owner-ci-verification-deferred",
+  "owner_decision": {
+    "date": "2026-11-06",
+    "decision": "Close L1 for development handoff; retain outstanding artifact/runtime verification",
+    "reason": "Hosted runner unavailable; owner reports three pipeline retries",
+    "next_stage": "R1",
+    "ci_pass_claimed": false
+  },
   "created_at": "2026-11-06",
   "repository": {
     "path": "/Users/preeternal/Projects/libgodot",
     "branch": "libgodot_47",
-    "superproject_commit": "0c4cf80c0ee9300c75e8f533007f6dc781457c51",
+    "superproject_commit": "b5f5878ea5c3b6f441d27858d86f88d3e77d7726",
+    "worktree_changes": [
+      "godot",
+      ".github/workflows/libgodot_builds.yml",
+      "build_libgodot.sh",
+      "build_libgodot_xcframework.sh",
+      "tools/test_ci_tools.py",
+      "l1-artifacts-manifest.json"
+    ],
     "origin": "git@github.com:Preeternal/libgodot.git"
   },
   "engine": {
     "submodule_url": "git@github.com:Preeternal/godot.git",
-    "commit": "a270a41433fa60c13930765b23ee92415f5a6c3e",
-    "parent": "cfc1cf634ca8a5cd189fb42c27285dfad7ab14d4",
+    "commit": "6e0e22f50a31028231e80c7dced537d97cad970d",
+    "parent": "a270a41433fa60c13930765b23ee92415f5a6c3e",
     "version": null,
     "validation_status": "PIN_UPDATED_REBUILD_AND_CI_REQUIRED",
+    "follow_up": "G1-fix-13: iOS SDL source selection; public ABI unchanged; fresh archives/framework link required",
     "previous_verified_version": "4.7.2.stable.custom_build.fe6b0e364"
   },
   "godot_cpp": {
@@ -88,8 +104,8 @@
   },
   "open_gates": [
     "execute CI for current SHA: Android arm64/arm32 libraries and AAR; LOAD alignment >=16 KiB for arm64 and >=4 KiB for arm32",
-    "execute CI for current SHA: iOS device/simulator slices, framework linkage and module maps",
+    "rebuild current engine SHA: iOS device/simulator archives with sdl=yes builtin_sdl=yes; require defined SDL_IsTablet, SDL_IsTV, SDL_IsIPad, SDL_IsAppleTV; final framework linkage and module maps",
     "consumer/runtime/device first-frame and restart/detach checks",
-    "owner review and CI result for this L1 candidate"
+    "deferred CI/package verification for this owner-accepted L1 source candidate before release"
   ]
 }

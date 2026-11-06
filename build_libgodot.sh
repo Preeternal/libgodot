@@ -115,7 +115,7 @@ target_build_options="$target_build_options opengl3=yes"
 if [ "$target_platform" = "ios" ]
 then
     target="template_release"
-    target_build_options="$target_build_options vulkan=no metal=yes library_type=static_library"
+    target_build_options="$target_build_options vulkan=no metal=yes sdl=yes builtin_sdl=yes library_type=static_library"
     lib_suffix="a"
     if [ $simulator -eq 1 ]
     then

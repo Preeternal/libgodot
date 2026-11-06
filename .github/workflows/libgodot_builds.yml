@@ -264,6 +264,7 @@ jobs:
             xcodebuild -version > "$RESULTS/toolchain.txt"
             python3 godot/tests/libgodot/check_library.py \
               --platform ios --target template_release --library-type static_library \
+              --require-ios-sdl \
               --revision "$(git -C godot rev-parse HEAD)" --library "$library" \
               --symbols "$RESULTS/symbols.txt" --manifest "$RESULTS/manifest.json"
           else
@@ -286,7 +287,7 @@ jobs:
               flags='engine: platform=android arch=${{ matrix.arch }} target=template_release library_type=shared_library production=yes debug_symbols=yes separate_debug_symbols=yes optimize=speed_trace lto=none opengl3=yes vulkan=yes swappy=no; shared host API; --no-host'
               ;;
             ios)
-              flags='engine: platform=ios arch=arm64 target=template_release library_type=static_library production=yes optimize=speed_trace lto=full opengl3=yes vulkan=no metal=yes ios_simulator=${{ matrix.simulator }}'
+              flags='engine: platform=ios arch=arm64 target=template_release library_type=static_library production=yes optimize=speed_trace lto=full opengl3=yes vulkan=no metal=yes sdl=yes builtin_sdl=yes ios_simulator=${{ matrix.simulator }}'
               ;;
             macos)
               flags='engine: platform=macos arch=arm64 target=template_debug library_type=shared_library dev_build=no debug_symbols=no vulkan=yes use_volk=yes metal=yes accesskit=yes angle=no'
@@ -465,6 +466,13 @@ jobs:
           set -euo pipefail
           python3 tools/artifact_manifest.py ci-input/device --verify
           python3 tools/artifact_manifest.py ci-input/simulator --verify
+          for slice in device simulator; do
+            library="$(find "ci-input/$slice" -name 'libgodot.ios.*.a' -print -quit)"
+            python3 godot/tests/libgodot/check_library.py --verify --require-ios-sdl \
+              --platform ios --target template_release --library-type static_library \
+              --revision "$(git -C godot rev-parse HEAD)" --library "$library" \
+              --symbols "ci-input/$slice/symbols.txt" --manifest "ci-input/$slice/manifest.json"
+          done
           cmp ci-input/device/extension_api.json ci-input/simulator/extension_api.json
           cmp ci-input/device/gdextension_interface.h ci-input/simulator/gdextension_interface.h
           mkdir -p build/gdextension godot/bin

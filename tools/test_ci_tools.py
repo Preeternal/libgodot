@@ -4,6 +4,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,61 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ArtifactsTest(unittest.TestCase):
+    def test_ios_packaging_requires_sdl_providers_before_framework_build(self):
+        # Exercise the packaging script with a real validator and inert native tools.
+        # No compiler, SCons or xcodebuild is executed by this fixture.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copy2(ROOT / "build_libgodot_xcframework.sh", root)
+            checker = root / "godot/tests/libgodot/check_library.py"
+            checker.parent.mkdir(parents=True)
+            shutil.copy2(ROOT / "godot/tests/libgodot/check_library.py", checker)
+            archive = root / "godot/bin/libgodot.ios.template_release.arm64.a"
+            archive.parent.mkdir(parents=True)
+            archive.write_bytes(b"archive fixture; nm output is supplied below")
+            for name in ("build/gdextension/gdextension_interface.h",
+                         "godot/core/extension/libgodot.h",
+                         "libgodot_framework/libgodot/placeholder"):
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("/* fixture */\n")
+            commands = root / "commands"
+            commands.mkdir()
+            scripts = {
+                "uname": "echo Darwin\n",
+                "sysctl": "echo 2\n",
+                "git": "echo " + "a" * 40 + "\n",
+                "nm": 'cat "$SDL_TEST_SYMBOLS"\n',
+                "xcodebuild": 'touch "$SDL_TEST_LINK_MARKER"\nexit 77\n',
+                # macOS uses sed -i ''; header rewriting is unrelated to this gate.
+                "sed": "exit 0\n",
+            }
+            for name, body in scripts.items():
+                path = commands / name
+                path.write_text("#!/bin/sh\n" + body)
+                path.chmod(0o755)
+            symbols = root / "symbols.txt"
+            marker = root / "framework-link-invoked"
+            env = dict(os.environ, PATH=str(commands) + os.pathsep + os.environ["PATH"],
+                       SDL_TEST_SYMBOLS=str(symbols), SDL_TEST_LINK_MARKER=str(marker))
+            exports = "0000 T _libgodot_create_godot_instance\n0000 T _libgodot_destroy_godot_instance\n"
+            sdl = ("SDL_IsTablet", "SDL_IsTV", "SDL_IsIPad", "SDL_IsAppleTV")
+            for missing in (("SDL_IsIPad", "SDL_IsAppleTV"), ("SDL_IsAppleTV",), ()):
+                with self.subTest(missing=missing):
+                    marker.unlink(missing_ok=True)
+                    symbols.write_text(exports + "".join(
+                        f"{' U' if name in missing else '0000 T'} _{name}\n" for name in sdl))
+                    result = subprocess.run(["/bin/bash", str(root / "build_libgodot_xcframework.sh"),
+                                             "--target", "template_release", "--no-sim"],
+                                            env=env, capture_output=True, text=True)
+                    if missing:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("Missing defined iOS SDL symbols", result.stderr)
+                        self.assertFalse(marker.exists(), "Invalid archive reached framework build")
+                    else:
+                        self.assertEqual(result.returncode, 77, result.stdout + result.stderr)
+                        self.assertTrue(marker.exists(), "Valid fixture did not reach the link step")
+
     def test_elf_alignment_uses_abi_specific_minimum(self):
         for arch, alignment, expected in (("arm32", 4096, 0), ("arm32", 16384, 0),
                                            ("arm32", 2048, 1), ("arm64", 4096, 1),

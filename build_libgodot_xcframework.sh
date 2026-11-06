@@ -78,6 +78,31 @@ if [ ! -f $BUILD_DIR/gdextension/gdextension_interface.h ]; then
     exit 1
 fi
 
+# A static archive can contain unresolved SDL references. Require their providers
+# before starting any framework build, including for locally supplied archives.
+validation_dir="$(mktemp -d)"
+trap 'rm -rf "$validation_dir"' EXIT
+validate_ios_archive() {
+    local archive="$1"
+    nm -gU "$archive" > "$validation_dir/symbols.txt"
+    python3 "$GODOT_DIR/tests/libgodot/check_library.py" \
+        --platform ios --target "$target" --library-type static_library \
+        --require-ios-sdl --revision "$(git -C "$GODOT_DIR" rev-parse HEAD)" \
+        --library "$archive" --symbols "$validation_dir/symbols.txt" \
+        --manifest "$validation_dir/manifest.json"
+}
+if [ "$target_build" -eq 1 ]; then
+    validate_ios_archive "$GODOT_DIR/bin/libgodot.ios.$target$suffix.arm64.a"
+fi
+if [ "$simulator" -eq 1 ]; then
+    for simarch in arm64 x86_64; do
+        archive="$GODOT_DIR/bin/libgodot.ios.$target$suffix.$simarch.simulator.a"
+        if [ -f "$archive" ]; then
+            validate_ios_archive "$archive"
+        fi
+    done
+fi
+
 cp $BUILD_DIR/gdextension/gdextension_interface.h $LIBGODOT_FRAMEWORK_DIR/libgodot/gdextension_interface.h
 cp $GODOT_DIR/core/extension/libgodot.h $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
 
