@@ -62,6 +62,38 @@ To test the SwiftUI sample, just open the ios_sample project in XCode 15.1+, bui
 
 Note: You will need to select a development team in the XCode project to sign the application.
 
+### Android C++ SDK headers
+
+`build_godotcpp_android.sh` packages each ABI's library with its matching source
+and generated headers:
+
+```text
+godot-cpp-android/
+  arm64-v8a/
+    libgodot-cpp.a
+    include/
+    abi-layout.json
+  armeabi-v7a/
+    libgodot-cpp.a
+    include/
+    abi-layout.json
+```
+
+Consumers must select the headers and library using the same `ANDROID_ABI`:
+
+```cmake
+set_target_properties(godot-cpp PROPERTIES
+    IMPORTED_LOCATION "${LIBGODOT_CPP_DIR}/${ANDROID_ABI}/libgodot-cpp.a")
+target_include_directories(godot-cpp INTERFACE
+    "${LIBGODOT_CPP_DIR}/${ANDROID_ABI}/include")
+```
+
+This replaces the shared top-level `include` directory used by earlier packages.
+Generated builtin wrappers contain architecture-dependent storage sizes; mixing
+ARM32 headers with ARM64 libraries can corrupt memory. Packaging checks compare
+each ABI's generated storage and C++ `sizeof` values with the selected API dump.
+The SDK uses single precision (`float_32` / `float_64`).
+
 ## Migeran LibGodot Design
 
 The core idea of the LibGodot feature is to build upon Godot's strong extension capabilities: its modularity, powerful type system and the GDExtension API.

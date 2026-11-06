@@ -12,13 +12,15 @@
   "repository": {
     "path": "/Users/preeternal/Projects/libgodot",
     "branch": "libgodot_47",
-    "superproject_commit": "b5f5878ea5c3b6f441d27858d86f88d3e77d7726",
+    "superproject_commit": "978f6dd5317029f5f449fa3e0dbc5297f9dceaaf",
     "worktree_changes": [
-      "godot",
       ".github/workflows/libgodot_builds.yml",
-      "build_libgodot.sh",
-      "build_libgodot_xcframework.sh",
-      "tools/test_ci_tools.py",
+      ".github/workflows/libgodot_contract.yml",
+      "README.md",
+      "build_godotcpp_android.sh",
+      "tools/artifact_manifest.py",
+      "tools/check_android_cpp_abi.py",
+      "tools/test_android_cpp_abi.py",
       "l1-artifacts-manifest.json"
     ],
     "origin": "git@github.com:Preeternal/libgodot.git"
@@ -73,7 +75,15 @@
       "bytes": 49809032
     },
     "android": {
-      "status": "CI_REQUIRED-not-built-locally",
+      "status": "RC1_HEADER_ABI_DEFECT-confirmed; corrected-package-rebuild-required",
+      "headers_layout": "godot-cpp-android/<ANDROID_ABI>/include, beside the matching libgodot-cpp.a",
+      "layout_validation": "tools/check_android_cpp_abi.py: per-ABI generated storage and NDK sizeof assertions; abi-layout.json records API and library digests",
+      "defective_release": {
+        "tag": "4.7.2.preeternal.1-rc.1",
+        "asset": "godot-cpp-android.zip",
+        "sha256": "8e7393d24dcfd57ae9dca111ede43ed571282219f4bdde6b70adb9c93169f176",
+        "source": "R1-fix-06 / L1-android-abi-defect: ARM32 shared headers paired with ARM64 library"
+      },
       "reproducible_command": "./build_libgodot.sh --target android --target-arch arm64 --release && ./build_libgodot.sh --target android --target-arch arm32 --release && ./build_godotcpp_android.sh --target template_release --target-arch-list 'arm64 arm32'"
     },
     "ios": {
@@ -104,6 +114,7 @@
   },
   "open_gates": [
     "execute CI for current SHA: Android arm64/arm32 libraries and AAR; LOAD alignment >=16 KiB for arm64 and >=4 KiB for arm32",
+    "rebuild Android C++ SDK with per-ABI headers; adapt R1 include path, approve new package identity/checksums and rebuild consumer before Start/Stop runtime verification",
     "rebuild current engine SHA: iOS device/simulator archives with sdl=yes builtin_sdl=yes; require defined SDL_IsTablet, SDL_IsTV, SDL_IsIPad, SDL_IsAppleTV; final framework linkage and module maps",
     "consumer/runtime/device first-frame and restart/detach checks",
     "deferred CI/package verification for this owner-accepted L1 source candidate before release"

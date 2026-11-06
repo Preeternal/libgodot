@@ -91,7 +91,8 @@ def main() -> None:
         "version": version, "build_flags": args.flags, "tools": tools,
         "build_scripts_sha256": {name: digest(ROOT / name) for name in
             ("build_libgodot.sh", "build_libgodot_xcframework.sh", "build_godotcpp_android.sh",
-             "build_godotcpp_xcframework.sh", "tools/prepare_godotcpp_api.py")},
+             "build_godotcpp_xcframework.sh", "tools/prepare_godotcpp_api.py",
+             "tools/check_android_cpp_abi.py")},
         "contract_sha256": contract,
         "debug_symbols": "See file inventory: Android unstripped native libraries; iOS framework dSYM directories",
         "files": inventory(args.directory),

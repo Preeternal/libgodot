@@ -68,8 +68,22 @@ ndk_version="$(python3 "$BASE_DIR/tools/engine_config.py" "$GODOT_DIR")"
 export SCONSFLAGS="${SCONSFLAGS:-} ndk_version=$ndk_version gdextension_dir=$BUILD_GDEXTENSION_DIR"
 
 tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
 prep_dir="$tmp_dir/godot-cpp-android"
 mkdir -p $prep_dir
+
+sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+if [ -n "$sdk_root" ]; then
+    ndk_root="$sdk_root/ndk/$ndk_version"
+else
+    ndk_root="${ANDROID_NDK_ROOT:?Set ANDROID_HOME, ANDROID_SDK_ROOT or ANDROID_NDK_ROOT}"
+fi
+case "$host_system" in
+    Darwin) ndk_host=darwin-x86_64 ;;
+    Linux) ndk_host=linux-x86_64 ;;
+    *) echo "Unsupported Android build host: $host_system"; exit 1 ;;
+esac
+ndk_compiler="$ndk_root/toolchains/llvm/prebuilt/$ndk_host/bin/clang++"
 
 cd $GODOT_CPP_DIR
 for target_arch in $target_arch_list
@@ -81,17 +95,17 @@ do
         suffix="dev.$target_arch"
         target_build_type_dir="dev"
         target_template="template_debug"
-        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android dev_build=yes debug_symbols=yes target=template_debug generate_engine_classes_bindings=no generate_bindings=yes
+        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android precision=single dev_build=yes debug_symbols=yes target=template_debug generate_engine_classes_bindings=no generate_bindings=yes
     ;;
     template_debug)
         suffix="$target_arch"
         target_build_type_dir="debug"
         target_template="template_debug"
-        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android target=$target generate_bindings=yes
+        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android precision=single target=$target generate_bindings=yes
     ;;
     template_release)
         suffix="$target_arch"
-        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android target=$target generate_bindings=yes
+        scons custom_api_file=$CUSTOM_API_FILE arch=$target_arch platform=android precision=single target=$target generate_bindings=yes
     ;;
     *)
         echo "Not supported target: $target"
@@ -100,16 +114,24 @@ do
 
     mkdir -p $prep_dir/$android_arch
     cp -a $GODOT_CPP_DIR/bin/libgodot-cpp.android.$target_template.$suffix.a $prep_dir/$android_arch/libgodot-cpp.a
+    # The next architecture regenerates gen/include in place. Snapshot this
+    # library's source/generated headers before starting that generation.
+    headers_dir="$prep_dir/$android_arch/include"
+    mkdir -p "$headers_dir"
+    cp -a "$GODOT_CPP_DIR/include/." "$headers_dir/"
+    cp -a "$GODOT_CPP_DIR/gen/include/." "$headers_dir/"
+    python3 "$BASE_DIR/tools/stage_public_headers.py" "$headers_dir" \
+        --engine "$GODOT_DIR" --interface "$BUILD_GDEXTENSION_DIR/gdextension_interface.h" --android
 done
 
-# Prepare headers
-headers_dir="$prep_dir/include"
-mkdir -p $headers_dir
-
-cp -a $GODOT_CPP_DIR/include/* $headers_dir/
-cp -a $GODOT_CPP_DIR/gen/include/* $headers_dir/
-python3 "$BASE_DIR/tools/stage_public_headers.py" "$headers_dir" \
-    --engine "$GODOT_DIR" --interface "$BUILD_GDEXTENSION_DIR/gdextension_interface.h" --android
+# Verify both snapshots after all generators have run, using their actual NDK targets.
+for target_arch in $target_arch_list; do
+    android_arch="$(godot_to_android_arch "$target_arch")"
+    python3 "$BASE_DIR/tools/check_android_cpp_abi.py" \
+        --api "$CUSTOM_API_FILE" --abi "$android_arch" \
+        --headers "$prep_dir/$android_arch/include" --library "$prep_dir/$android_arch/libgodot-cpp.a" \
+        --compiler "$ndk_compiler" --manifest "$prep_dir/$android_arch/abi-layout.json"
+done
 
 BUILD_GODOT_CPP_TARGET_DIR=$BUILD_GODOT_CPP_DIR/$target_build_type_dir
 rm -rf $BUILD_GODOT_CPP_TARGET_DIR

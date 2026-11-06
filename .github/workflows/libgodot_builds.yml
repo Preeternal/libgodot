@@ -43,6 +43,7 @@ jobs:
           python3 tools/engine_config.py
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py \
             ArtifactsTest.test_ndk_query_does_not_import_engine_dependencies -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
       - uses: actions/cache/restore@v6
         id: cache
         with:
@@ -389,16 +390,24 @@ jobs:
           cp -a build/godot-cpp-android/release ci-results/android/godot-cpp-android
           ndk_version="$(python3 tools/engine_config.py)"
           ndk_bin="$ANDROID_HOME/ndk/$ndk_version/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          printf '%s\n' '#include <libgodot_android.h>' | \
-            "$ndk_bin/clang" --target=aarch64-linux-android24 -std=c11 -Wall -Wextra -Werror \
-            -Ici-results/android/godot-cpp-android/godot-cpp-android/include -x c -fsyntax-only -
+          for spec in 'arm64-v8a aarch64-linux-android24' 'armeabi-v7a armv7a-linux-androideabi24'; do
+            read -r abi triple <<< "$spec"
+            slice="ci-results/android/godot-cpp-android/godot-cpp-android/$abi"
+            python3 tools/check_android_cpp_abi.py --verify \
+              --api build/gdextension/godotcpp_extension_api.json --abi "$abi" \
+              --headers "$slice/include" --library "$slice/libgodot-cpp.a" \
+              --compiler "$ndk_bin/clang++" --manifest "$slice/abi-layout.json"
+            printf '%s\n' '#include <libgodot_android.h>' | \
+              "$ndk_bin/clang" --target="$triple" -std=c11 -Wall -Wextra -Werror \
+              -I"$slice/include" -x c -fsyntax-only -
+          done
           unzip -l ci-results/android/godot-lib.template_release.aar | tee ci-results/android/aar-files.txt
           grep -q 'jni/arm64-v8a/libgodot_android.so' ci-results/android/aar-files.txt
           grep -q 'jni/armeabi-v7a/libgodot_android.so' ci-results/android/aar-files.txt
           cp ci-input/arm64/android-template-release-native-symbols.zip ci-results/android/arm64-native-symbols.zip
           cp ci-input/arm32/android-template-release-native-symbols.zip ci-results/android/arm32-native-symbols.zip
           python3 tools/artifact_manifest.py ci-results/android --profile android-package \
-            --flags 'AAR from verified arm32/arm64; godot-cpp template_release common engine NDK; no native rebuild'
+            --flags 'AAR from verified arm32/arm64; godot-cpp template_release precision=single common engine NDK; per-ABI headers and builtin layout checks; no native engine rebuild'
       - uses: actions/cache/save@v6
         if: always() && steps.cache.outputs.cache-hit != 'true'
         with:
