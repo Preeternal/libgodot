@@ -72,10 +72,19 @@ fi
 
 mkdir -p $BUILD_DIR
 
-cp $GODOT_DIR/core/extension/gdextension_interface.h $LIBGODOT_FRAMEWORK_DIR/libgodot/gdextension_interface.h
+if [ ! -f $BUILD_DIR/gdextension/gdextension_interface.h ]; then
+    echo "Cannot find generated gdextension_interface.h in $BUILD_DIR/gdextension"
+    echo "Run build_libgodot.sh --no-target --update-api first"
+    exit 1
+fi
+
+cp $BUILD_DIR/gdextension/gdextension_interface.h $LIBGODOT_FRAMEWORK_DIR/libgodot/gdextension_interface.h
 cp $GODOT_DIR/core/extension/libgodot.h $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
 
-sed -i '' -e 's|^#include "gdextension_interface.h"|#include <libgodot/gdextension_interface.h>|' $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
+sed -i '' \
+    -e 's|^#include "gdextension_interface.h"|#include <libgodot/gdextension_interface.h>|' \
+    -e 's|^#include "core/extension/gdextension_interface.gen.h"|#include <libgodot/gdextension_interface.h>|' \
+    $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
 
 if [ $target_build -eq 1 ]
 then
@@ -85,7 +94,8 @@ cp -a $GODOT_DIR/bin/libgodot.ios.$target$suffix.arm64.a $LIBGODOT_FRAMEWORK_DIR
 rm -rf $BUILD_DIR/libgodot.framework*
 rm -rf $BUILD_DIR/ios_${target}
 cd $LIBGODOT_FRAMEWORK_DIR
-xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS' clean build
+xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS' \
+    CODE_SIGNING_ALLOWED=NO ARCHS=arm64 clean build
 
 cd $BASE_DIR
 mkdir -p $BUILD_DIR/ios_${target}
@@ -112,7 +122,9 @@ then
         lipo -create -output $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.a $simulator_files
         rm -rf $BUILD_DIR/libgodot.framework*
         cd $LIBGODOT_FRAMEWORK_DIR
-        xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS Simulator' clean build
+        simulator_archs="$(lipo -archs "$LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.a")"
+        xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO "ARCHS=$simulator_archs" clean build
 
         cd $BASE_DIR
         mkdir -p $BUILD_DIR/ios_${target}_simulator

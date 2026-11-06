@@ -225,10 +225,12 @@ if [ $update_api -eq 1 ] || [ ! -f $BUILD_GDEXTENSION_DIR/extension_api.json ]
 then
     mkdir -p $BUILD_GDEXTENSION_DIR
     cd $BUILD_GDEXTENSION_DIR
-    $host_godot --headless --dump-extension-api
-    cp -v $GODOT_DIR/core/extension/gdextension_interface.h $BUILD_GDEXTENSION_DIR/
+    $host_godot --headless --dump-extension-api --dump-gdextension-interface --dump-gdextension-interface-json
+    python3 "$BASE_DIR/tools/prepare_godotcpp_api.py" \
+        "$BUILD_GDEXTENSION_DIR/extension_api.json" \
+        "$BUILD_GDEXTENSION_DIR/godotcpp_extension_api.json"
 
-    echo "Successfully updated the GDExtension API."
+    echo "Successfully updated the GDExtension API and interface headers."
 fi
 
 if [ "$target_platform" = "" ]

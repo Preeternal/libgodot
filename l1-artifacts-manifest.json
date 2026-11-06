@@ -1,0 +1,90 @@
+{
+  "schema": "libgodot-l1-artifacts/v1",
+  "status": "fix-01-prepared-awaiting-owner-review-and-ci",
+  "created_at": "2026-11-06",
+  "repository": {
+    "path": "/Users/preeternal/Projects/libgodot",
+    "branch": "libgodot_47",
+    "superproject_commit": "e1832f5c0cd025e7c0bc997e0f43421cc7daf923",
+    "origin": "git@github.com:Preeternal/libgodot.git"
+  },
+  "engine": {
+    "submodule_url": "git@github.com:Preeternal/godot.git",
+    "commit": "191fc5bdc3cab0545c8ee50ef79fc3365237510c",
+    "parent": "45294a7cf43d962f0f7617fd2d7be7606132d3be",
+    "version": "4.7.2.stable.custom_build.191fc5bdc"
+  },
+  "godot_cpp": {
+    "submodule_url": "https://github.com/migeran/godot-cpp.git",
+    "commit": "ace561a285e8a2374e3d61457032d2e14afd5d03",
+    "compatibility": "Migeran LibGodot lifecycle fork; custom API derivative removes 4.7 metadata unsupported by this generator",
+    "custom_api_adapter": "tools/prepare_godotcpp_api.py",
+    "official_release_reviewed": "10.0.0-stable (not selected: no Migeran GDExtensionBinding::deinit())"
+  },
+  "swift_submodules": {
+    "SwiftGodot": "37b127d3fa1c3e3d3f7e1fd119bd8743517b7a7d",
+    "SwiftGodotKit": "3243bb98f2db69abc5de60fe67134ff3e588df62",
+    "changed": false
+  },
+  "generated_contract": {
+    "api": {
+      "path": "build/gdextension/extension_api.json",
+      "sha256": "d67c9dc997372e036b2ee9b69de63324dd754a3592380b06084881d826a0b20d"
+    },
+    "godot_cpp_api": {
+      "path": "build/gdextension/godotcpp_extension_api.json",
+      "sha256": "1a1142d8ad8d3e96270fe44337a4b96bd9196f9928b3570cf559948adb45d3b3"
+    },
+    "gdextension_interface_header": {
+      "path": "build/gdextension/gdextension_interface.h",
+      "sha256": "640b48188708ba0016f8d7ace9e0e1d3279a41fa1226c59ff3193b15538bd254"
+    },
+    "gdextension_interface_json": {
+      "path": "build/gdextension/gdextension_interface.json",
+      "sha256": "7d8c0a039d9743eb8ebf88681ae0c641d8d3aa5ffca11081745a84da803e09a1"
+    },
+    "api_validation": "PASS: godot/tests/libgodot/check_api.py, 15 methods"
+  },
+  "artifacts": {
+    "macos": {
+      "status": "PASS-local-compatibility",
+      "path": "godot-cpp/bin/libgodot-cpp.macos.template_debug.arm64.a",
+      "sha256": "7658909f64ebae9ea3cf2c18d5377b4006f91cfc0f1ef8cd565f466e857984b6",
+      "bytes": 49809032
+    },
+    "android": {
+      "status": "CI_REQUIRED-not-built-locally",
+      "reproducible_command": "./build_libgodot.sh --target android --target-arch arm64 --release && ./build_libgodot.sh --target android --target-arch arm32 --release && ./build_godotcpp_android.sh --target template_release --target-arch-list 'arm64 arm32'"
+    },
+    "ios": {
+      "status": "CI_REQUIRED-not-built-locally",
+      "reproducible_command": "./build_libgodot.sh --target ios --target-arch arm64 --release && ./build_libgodot.sh --target ios --target-arch arm64 --simulator --release && ./build_godotcpp_xcframework.sh --target template_release"
+    }
+  },
+  "commands": [
+    "./build_libgodot.sh --no-target --host-rebuild --host-release --update-api",
+    "python3 tools/prepare_godotcpp_api.py build/gdextension/extension_api.json build/gdextension/godotcpp_extension_api.json",
+    "scons -C godot-cpp gdextension_dir=$PWD/build/gdextension custom_api_file=$PWD/build/gdextension/godotcpp_extension_api.json platform=macos arch=arm64 target=template_debug generate_bindings=yes -j2",
+    "python3 godot/tests/libgodot/check_api.py build/gdextension/extension_api.json",
+    "clang++ -arch arm64 -std=c++17 -Wall -Wextra -Werror -fsyntax-only -Ilibgodot_framework -Ilibgodot_framework/libgodot -isystem godot-cpp/include -isystem godot-cpp/gen/include -isystem build/gdextension samples/cpp_sample/src/main.cpp",
+    "PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py -v"
+  ],
+  "ci_workflows": [
+    ".github/workflows/libgodot_builds.yml",
+    ".github/workflows/libgodot_contract.yml"
+  ],
+  "ci_manifest": {
+    "schema": "libgodot-ci-artifacts/v1",
+    "generator": "tools/artifact_manifest.py",
+    "verification": "python3 tools/artifact_manifest.py ARTIFACT_DIRECTORY --verify",
+    "output": "artifacts-manifest.json in each CI artifact",
+    "identity": "Separate libgodot, godot and godot_cpp SHAs plus run ID/attempt",
+    "coverage": "All uploaded files, native ABI libraries, AAR, C++ headers/libraries, final XCFramework zip archives and included dSYMs"
+  },
+  "open_gates": [
+    "execute CI for current SHA: Android arm64/arm32 libraries, AAR and 16 KiB alignment",
+    "execute CI for current SHA: iOS device/simulator slices, framework linkage and module maps",
+    "consumer/runtime/device first-frame and restart/detach checks",
+    "owner review and CI result for this L1 candidate"
+  ]
+}

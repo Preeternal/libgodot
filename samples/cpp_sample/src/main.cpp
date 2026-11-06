@@ -82,7 +82,7 @@ public:
         if (!is_open()) {
             return nullptr;
         }
-        GDExtensionObjectPtr instance = func_libgodot_create_godot_instance(p_argc, p_argv, p_init_func);
+        GDExtensionObjectPtr instance = func_libgodot_create_godot_instance(p_argc, p_argv, p_init_func, nullptr, nullptr);
         if (instance == nullptr) {
             return nullptr;
         }
@@ -96,8 +96,8 @@ public:
 
 private:
     void *handle = nullptr;
-    GDExtensionObjectPtr (*func_libgodot_create_godot_instance)(int, char *[], GDExtensionInitializationFunction) = nullptr;
-    void (*func_libgodot_destroy_godot_instance)(GDExtensionObjectPtr) = nullptr;
+    decltype(&libgodot_create_godot_instance) func_libgodot_create_godot_instance = nullptr;
+    decltype(&libgodot_destroy_godot_instance) func_libgodot_destroy_godot_instance = nullptr;
 };
 
 int main(int argc, char **argv) {
