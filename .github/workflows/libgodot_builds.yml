@@ -385,7 +385,13 @@ jobs:
         run: |
           set -euo pipefail
           ndk_version="$(python3 tools/engine_config.py)"
-          sdkmanager "ndk;$ndk_version" "platforms;android-36" "build-tools;36.1.0"
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$sdkmanager" ]]; then
+            echo "Android SDK command-line tools are missing: $sdkmanager" >&2
+            exit 1
+          fi
+          "$sdkmanager" --sdk_root="$ANDROID_HOME" \
+            "ndk;$ndk_version" "platforms;android-36" "build-tools;36.1.0"
       - name: Build bindings and assemble AAR without rebuilding native engine
         shell: bash
         run: |

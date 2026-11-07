@@ -12,19 +12,9 @@
   "repository": {
     "path": "/Users/preeternal/Projects/libgodot",
     "branch": "libgodot_47",
-    "superproject_commit": "2128a274257d6d89b9046570f33560ffc9e091b6",
+    "superproject_commit": "282d26296999f1fb2d45ac7f0e3ff2761e80dd0d",
     "worktree_changes": [
       ".github/workflows/libgodot_builds.yml",
-      ".github/workflows/libgodot_contract.yml",
-      "README.md",
-      "build_libgodot.sh",
-      "build_libgodot_xcframework.sh",
-      "build_prebuilt_release.sh",
-      "godot",
-      "tools/artifact_manifest.py",
-      "tools/check_ios_renderers.py",
-      "tools/test_ios_renderers.py",
-      "tools/test_ci_tools.py",
       "l1-artifacts-manifest.json"
     ],
     "origin": "git@github.com:Preeternal/libgodot.git"
@@ -80,6 +70,7 @@
     },
     "android": {
       "status": "RC1_HEADER_ABI_DEFECT-confirmed; corrected-package-rebuild-required",
+      "ci_follow_up": "L1-fix-08: invoke sdkmanager via ANDROID_HOME/cmdline-tools/latest/bin; previous package job exited 127 before SDK/AAR build; new CI result required",
       "headers_layout": "godot-cpp-android/<ANDROID_ABI>/include, beside the matching libgodot-cpp.a",
       "layout_validation": "tools/check_android_cpp_abi.py: per-ABI generated storage and NDK sizeof assertions; abi-layout.json records API and library digests",
       "defective_release": {
