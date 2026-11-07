@@ -45,6 +45,9 @@ jobs:
             ArtifactsTest.test_ndk_query_does_not_import_engine_dependencies -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ios_renderers.py -v
+          mkdir -p ci-results/host
+          PYTHONDONTWRITEBYTECODE=1 python3 godot/tests/libgodot/check_drawables.py -v \
+            2>&1 | tee ci-results/host/drawables.log
       - uses: actions/cache/restore@v6
         id: cache
         with:
