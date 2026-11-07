@@ -12,11 +12,8 @@
   "repository": {
     "path": "/Users/preeternal/Projects/libgodot",
     "branch": "libgodot_47",
-    "superproject_commit": "7863e4d07c7ac88a980a39c87d86225c829585b7",
+    "superproject_commit": "cf8c7c890bb9c58fbf1fd3925c44bf3a4fbb9a60",
     "worktree_changes": [
-      ".github/workflows/libgodot_builds.yml",
-      "build_prebuilt_release.sh",
-      "tools/artifact_manifest.py",
       "godot",
       "l1-artifacts-manifest.json"
     ],
@@ -24,11 +21,11 @@
   },
   "engine": {
     "submodule_url": "git@github.com:Preeternal/godot.git",
-    "commit": "08a68e0617b1fc5245fc15bd60d92296298dcb6d",
-    "parent": "afbb7c465c22525e7341286980b79a212e70cca1",
+    "commit": "0c6cef56aeb7283837f628fc02ffc04c5fedac2a",
+    "parent": "08a68e0617b1fc5245fc15bd60d92296298dcb6d",
     "version": null,
     "validation_status": "PIN_UPDATED_REBUILD_AND_CI_REQUIRED",
-    "follow_up": "G1-fix-15: mobile native GL flip and iOS/EGL drawable sizes; public ABI unchanged; fresh binaries and mobile validation required",
+    "follow_up": "G1-fix-16: unused-include cleanup only; inherits G1-fix-15 drawable fixes; no API/ABI/runtime logic change; new binaries must retain actual source provenance",
     "previous_verified_version": "4.7.2.stable.custom_build.fe6b0e364"
   },
   "godot_cpp": {
@@ -118,7 +115,7 @@
     "coverage": "All uploaded files, native ABI libraries, AAR, C++ headers/libraries, final XCFramework zip archives and included dSYMs"
   },
   "open_gates": [
-    "build and deliver G1-fix-15 from actual 08a68e06 source with a new approved immutable artifact ID; RC3 afbb7c465 does not contain these fixes",
+    "deliver G1-fix-15 from a verified actual source SHA (latest pin 0c6cef56); existing 08a68e06 binaries retain their identity; RC3 afbb7c465 lacks these fixes",
     "execute CI for current SHA: Android arm64/arm32 libraries and AAR; LOAD alignment >=16 KiB for arm64 and >=4 KiB for arm32",
     "rebuild Android C++ SDK with per-ABI headers; adapt R1 include path, approve new package identity/checksums and rebuild consumer before Start/Stop runtime verification",
     "rebuild current engine SHA: iOS device/simulator archives with sdl=yes builtin_sdl=yes; require defined SDL_IsTablet, SDL_IsTV, SDL_IsIPad, SDL_IsAppleTV; final framework linkage and module maps",
