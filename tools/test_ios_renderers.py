@@ -29,6 +29,9 @@ class IosRendererTest(unittest.TestCase):
             root = Path(tmp)
             shutil.copy2(ROOT / "build_libgodot.sh", root)
             (root / "godot").mkdir()
+            (root / "godot/SConstruct").write_text('opts.Add(BoolVariable("audio_input", "Capture", True))\n')
+            (root / "tools").mkdir()
+            shutil.copy2(ROOT / "tools/check_no_record.py", root / "tools")
             headers = root / "build/gdextension"
             headers.mkdir(parents=True)
             (headers / "extension_api.json").write_text("{}\n")
@@ -36,20 +39,26 @@ class IosRendererTest(unittest.TestCase):
             commands = root / "commands"
             commands.mkdir()
             for name, body in {"uname": 'case "$1" in -s) echo Darwin;; *) echo arm64;; esac\n',
-                               "sysctl": "echo 2\n"}.items():
+                               "sysctl": "echo 2\n",
+                               "nm": "printf '%s\\n' ' U _AudioOutputUnitStart' ' U _AudioUnitInitialize'\n"}.items():
                 path = commands / name
                 path.write_text("#!/bin/sh\n" + body)
                 path.chmod(0o755)
             scons = commands / "scons"
             scons.write_text(f"#!{sys.executable}\nimport json,os,sys\n"
-                             "open(os.environ['TEST_SCONS_ARGS'], 'w').write(json.dumps(sys.argv[1:]))\n")
+                             "from pathlib import Path\n"
+                             "open(os.environ['TEST_SCONS_ARGS'], 'w').write(json.dumps(sys.argv[1:]))\n"
+                             "suffix='.simulator' if 'ios_simulator=true' in sys.argv else ''\n"
+                             "p=Path('bin')/('libgodot.ios.template_release.arm64'+suffix+'.a')\n"
+                             "p.parent.mkdir(exist_ok=True)\n"
+                             "p.write_bytes(b'!<arch>\\n_AudioOutputUnitStart\\0_AudioUnitInitialize\\0')\n")
             scons.chmod(0o755)
             log = root / "scons-arguments.json"
             env = dict(os.environ, PATH=str(commands) + os.pathsep + os.environ["PATH"],
-                       TEST_SCONS_ARGS=str(log))
-            for simulator in (False, True):
+                       TEST_SCONS_ARGS=str(log), LIBGODOT_AUDIO_VARIANT="no-record")
+            for simulator, recording in ((False, False), (True, False), (False, True), (True, True)):
                 args = ["/bin/bash", str(root / "build_libgodot.sh"), "--no-host", "--target", "ios",
-                        "--target-arch", "arm64", "--release"] + (["--simulator"] if simulator else [])
+                        "--target-arch", "arm64", "--release"] + (["--simulator"] if simulator else []) + (["--with-recording"] if recording else [])
                 result = subprocess.run(args, env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 flags = json.loads(log.read_text())
@@ -57,6 +66,11 @@ class IosRendererTest(unittest.TestCase):
                 self.assertNotIn("metal=yes" if simulator else "metal=no", flags)
                 self.assertIn("opengl3=yes", flags)
                 self.assertIn("vulkan=no", flags)
+                self.assertIn("audio_input=yes" if recording else "audio_input=no", flags)
+                if not recording:
+                    manifest = root / f"build/audio-audits/ios-template_release-arm64-{int(simulator)}-no-record-audit.json"
+                    name = json.loads(manifest.read_text())["libraries"][0]["name"]
+                    self.assertEqual(name, "libgodot.ios.template_release.arm64" + (".simulator" if simulator else "") + ".a")
 
     def test_requires_defined_methods_of_both_driver_classes(self):
         self.assertEqual(len(driver_symbols(METAL, "device")), 2)

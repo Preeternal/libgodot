@@ -5,6 +5,10 @@ The [build workflow](../.github/workflows/libgodot_builds.yml) runs on pushes to
 and godot-cpp submodule commits over HTTPS. These jobs do not use SwiftGodot or
 SwiftGodotKit.
 
+Mobile targets default to the [no-record audio variant](Audio-variants.md).
+Manual dispatch can select `with-recording`; both variants retain playback.
+The host editor and macOS contract jobs keep their regular audio configuration.
+
 ## Build pipeline
 
 One macOS host job builds the editor and generates the extension API and
@@ -34,6 +38,8 @@ from other workflows or repositories are not reused automatically.
 - Public C headers, generated bindings, drawable contracts, instance cleanup
   and recreate smoke checks.
 - Source revisions, generated contract hashes and complete artifact inventories.
+- For no-record mobile builds, absence of microphone API references and retained
+  audio output references in native libraries and final packages.
 
 GPU rendering, input and lifecycle behavior must also be tested in consumer
 applications on the relevant devices and renderers. Compilation and package
@@ -51,6 +57,11 @@ checks alone do not establish runtime compatibility.
 | libgodot-macos | ARM64 template_debug shared library, editor, generated contract, manifest and tools |
 | libgodot-ios-xcframeworks | Engine and godot-cpp XCFramework archives, engine dSYMs, renderer metadata, native input provenance and logs |
 | libgodot-contract | API/binding compilation and public C ABI lifecycle/recreate diagnostics |
+
+All workflow artifact names above append `-no-record` or `-with-recording` to
+identify the selected mobile build. Android packages include a local Maven ZIP,
+the AAR and a zipped C++ SDK. Engine ZIP filenames also contain the audio variant.
+The reusable contract workflow receives the same artifact suffix.
 
 The host editor uses Vulkan with Volk and Metal, so it does not require a
 MoltenVK SDK. `tools/engine_config.py` reads the pinned engine's NDK requirement
@@ -80,12 +91,12 @@ With the required build toolchains installed:
 
 ```sh
 ./build_prebuilt_release.sh
-python3 tools/artifact_manifest.py build/prebuilt/release --verify
+python3 tools/artifact_manifest.py build/prebuilt/release/no-record --verify
 ```
 
 The script builds and packages the mobile libraries and bindings, then writes
 the combined manifest only after successful completion. Output is placed in
-`build/prebuilt/release`. Release publishing is a separate operation; the build
+`build/prebuilt/release/<variant>`. Release publishing is a separate operation; the build
 workflows do not create GitHub releases.
 
 After generating the API, local checks can run without rebuilding the engine:

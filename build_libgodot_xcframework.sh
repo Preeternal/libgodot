@@ -85,6 +85,10 @@ trap 'rm -rf "$validation_dir"' EXIT
 validate_ios_archive() {
     local archive="$1"
     local slice_name="$2"
+    if [[ "${LIBGODOT_AUDIO_VARIANT:-no-record}" == no-record ]]; then
+        python3 "$BASE_DIR/tools/check_no_record.py" --platform ios --library "$archive" \
+            --manifest "$validation_dir/$slice_name-no-record-audit.json"
+    fi
     nm -gU "$archive" > "$validation_dir/symbols.txt"
     python3 "$GODOT_DIR/tests/libgodot/check_library.py" \
         --platform ios --target "$target" --library-type static_library \
@@ -189,6 +193,10 @@ if [ "$target_build" -eq 1 ]; then renderer_check_args+=(--require-slice device)
 if [ "$simulator" -eq 1 ]; then renderer_check_args+=(--require-slice simulator); fi
 python3 "$BASE_DIR/tools/check_ios_renderers.py" --xcframework "$tmp_dir/libgodot.xcframework" \
     "${renderer_check_args[@]}"
+if [[ "${LIBGODOT_AUDIO_VARIANT:-no-record}" == no-record ]]; then
+    python3 "$BASE_DIR/tools/check_no_record.py" --platform ios --xcframework "$tmp_dir/libgodot.xcframework" \
+        --manifest "$tmp_dir/no-record-audit.json"
+fi
 
 BUILD_LIBGODOT_TARGET_DIR="$BUILD_DIR/libgodot/$build_type"
 rm -rf $BUILD_LIBGODOT_TARGET_DIR
@@ -197,5 +205,6 @@ mkdir -p $BUILD_LIBGODOT_TARGET_DIR
 cd $tmp_dir
 cp -Rvf libgodot.xcframework $BUILD_LIBGODOT_TARGET_DIR
 cp renderer-slices.json "$BUILD_LIBGODOT_TARGET_DIR/"
+if [[ -f no-record-audit.json ]]; then cp no-record-audit.json "$BUILD_LIBGODOT_TARGET_DIR/"; fi
 
 rm -rf $tmp_dir
