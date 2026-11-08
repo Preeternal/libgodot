@@ -28,7 +28,8 @@ This screenshot shows an iOS application displaying 4 Godot Engine Windows each 
 ## Quickstart
 
 See [Continuous integration](doc/CI.md) for build validation, artifacts and
-local release packaging.
+packaging details. See [Mobile audio variants](doc/Audio-variants.md) for
+playback-only builds and optional microphone capture.
 
 This repository is set up for easy testing of LibGodot.
 

@@ -28,6 +28,7 @@ build_host=1
 simulator=0
 library_type="auto"
 profiler_type=""
+audio_variant="${LIBGODOT_AUDIO_VARIANT:-no-record}"
 
 angle_libs="$BASE_DIR/ANGLE"
 
@@ -102,8 +103,14 @@ do
             shift
             profiler_type="${1:-}"
         ;;
+        --no-record)
+            audio_variant="no-record"
+        ;;
+        --with-recording)
+            audio_variant="with-recording"
+        ;;
         *)
-            echo "Usage: $0 [--host-debug] [--host-rebuild] [--host-release] [--no-host] [--debug] [--release] [--update-api] [--target <target platform>] [--target-arch <target platform>] [--profiler-type <profiler type>]"
+            echo "Usage: $0 [--host-debug] [--host-rebuild] [--host-release] [--no-host] [--debug] [--release] [--update-api] [--target <target platform>] [--target-arch <target platform>] [--profiler-type <profiler type>] [--no-record|--with-recording]"
             exit 1
         ;;
     esac
@@ -111,6 +118,24 @@ do
 done
 
 target_build_options="$target_build_options opengl3=yes"
+
+case "$audio_variant" in
+    no-record|with-recording) ;;
+    *) echo "Unsupported LIBGODOT_AUDIO_VARIANT: $audio_variant" >&2; exit 1 ;;
+esac
+
+if [[ "$target_platform" == ios || "$target_platform" == android ]]; then
+    if [[ "$audio_variant" == no-record ]]; then
+        # Fail before any build: older pins silently ignore unknown SCons options.
+        if ! grep -q 'BoolVariable("audio_input"' "$GODOT_DIR/SConstruct"; then
+            echo 'This Godot pin lacks audio_input=no support; update the engine pin first.' >&2
+            exit 1
+        fi
+        target_build_options="$target_build_options audio_input=no"
+    else
+        target_build_options="$target_build_options audio_input=yes"
+    fi
+fi
 
 if [ "$target_platform" = "ios" ]
 then
@@ -256,6 +281,26 @@ fi
 
 cd $GODOT_DIR
 scons p=$target_platform target=$target arch=$target_arch $target_build_options swappy=no "cache_path=${SCONS_CACHE:-}"
+
+if [[ "$audio_variant" == no-record && ( "$target_platform" == ios || "$target_platform" == android ) ]]; then
+    audit_library="$target_godot"
+    if [[ "$target_platform" == ios && "$simulator" -eq 1 ]]; then
+        audit_library="${target_godot%.a}.simulator.a"
+    fi
+    if [[ "$target_platform" == android && "$library_type" == shared_library ]]; then
+        case "$target_arch" in
+            arm64) audit_abi=arm64-v8a ;;
+            arm32) audit_abi=armeabi-v7a ;;
+            *) echo 'Unsupported Android architecture for no-record audit' >&2; exit 1 ;;
+        esac
+        audit_build_type=release
+        if [[ "$debug" -eq 1 ]]; then audit_build_type=debug; fi
+        if [[ "$dev_build" -eq 1 ]]; then audit_build_type=dev; fi
+        audit_library="$GODOT_DIR/platform/android/java/lib/libs/$audit_build_type/$audit_abi/libgodot_android.so"
+    fi
+    python3 "$BASE_DIR/tools/check_no_record.py" --platform "$target_platform" --library "$audit_library" \
+        --manifest "$BUILD_DIR/audio-audits/$target_platform-$target-$target_arch-$simulator-no-record-audit.json"
+fi
 
 function godot_to_android_arch() {
     godot_arch="$1"

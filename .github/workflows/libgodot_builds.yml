@@ -5,6 +5,12 @@ on:
     branches: [libgodot_47]
   pull_request:
   workflow_dispatch:
+    inputs:
+      audio_variant:
+        description: Mobile audio variant (playback is enabled in both)
+        type: choice
+        default: no-record
+        options: [no-record, with-recording]
 
 permissions:
   contents: read
@@ -13,6 +19,10 @@ env:
   SCONS_VERSION: 4.10.1
   SCONS_CACHE: ${{ github.workspace }}/.scons_cache
   PYTHONHASHSEED: '0'
+  LIBGODOT_AUDIO_VARIANT: ${{ inputs.audio_variant || 'no-record' }}
+  ARTIFACT_SUFFIX: ${{ inputs.audio_variant == 'with-recording' && '-with-recording' || '-no-record' }}
+  GODOT_VERSION_STATUS: preeternal.2
+  GODOT_PUBLISH_VERSION: ${{ inputs.audio_variant == 'with-recording' && '4.7.2.preeternal.2-with-recording' || '4.7.2.preeternal.2' }}
 
 jobs:
   host:
@@ -45,6 +55,7 @@ jobs:
             ArtifactsTest.test_ndk_query_does_not_import_engine_dependencies -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
           PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ios_renderers.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_no_record.py -v
           mkdir -p ci-results/host
           PYTHONDONTWRITEBYTECODE=1 python3 godot/tests/libgodot/check_drawables.py -v \
             2>&1 | tee ci-results/host/drawables.log
@@ -78,7 +89,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: libgodot-host
+          name: libgodot-host${{ env.ARTIFACT_SUFFIX }}
           path: ci-results/host/
           retention-days: 14
           compression-level: 1
@@ -182,7 +193,7 @@ jobs:
       - name: Download shared generated contract
         uses: actions/download-artifact@v8
         with:
-          name: libgodot-host
+          name: libgodot-host${{ env.ARTIFACT_SUFFIX }}
           path: ci-input/host
       - name: Verify and stage shared contract
         shell: bash
@@ -290,6 +301,19 @@ jobs:
               --symbols "$RESULTS/symbols.txt" --manifest "$RESULTS/manifest.json"
           fi
 
+      - name: Check no-record native binaries
+        if: env.LIBGODOT_AUDIO_VARIANT == 'no-record' && matrix.platform != 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ '${{ matrix.platform }}' == ios ]]; then
+            library="$(find "$RESULTS" -name 'libgodot.ios.*.a' -print -quit)"
+          else
+            library="$RESULTS/${{ matrix.abi }}/libgodot_android.so"
+          fi
+          python3 tools/check_no_record.py --platform '${{ matrix.platform }}' \
+            --library "$library" --manifest "$RESULTS/no-record-audit.json"
+
       - name: Generate and verify artifact inventory
         shell: bash
         run: |
@@ -317,7 +341,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: libgodot-${{ matrix.id }}
+          name: libgodot-${{ matrix.id }}${{ env.ARTIFACT_SUFFIX }}
           path: ${{ env.RESULTS }}/
           compression-level: 1
           retention-days: 14
@@ -360,11 +384,11 @@ jobs:
           restore-keys: l1-v2-android-cpp-
       - uses: actions/download-artifact@v8
         with:
-          name: libgodot-android-arm64
+          name: libgodot-android-arm64${{ env.ARTIFACT_SUFFIX }}
           path: ci-input/arm64
       - uses: actions/download-artifact@v8
         with:
-          name: libgodot-android-arm32
+          name: libgodot-android-arm32${{ env.ARTIFACT_SUFFIX }}
           path: ci-input/arm32
       - name: Verify and stage both native ABIs
         shell: bash
@@ -421,6 +445,22 @@ jobs:
           unzip -l ci-results/android/godot-lib.template_release.aar | tee ci-results/android/aar-files.txt
           grep -q 'jni/arm64-v8a/libgodot_android.so' ci-results/android/aar-files.txt
           grep -q 'jni/armeabi-v7a/libgodot_android.so' ci-results/android/aar-files.txt
+          maven_repo="$(mktemp -d)"
+          (
+            cd godot/platform/android/java
+            SIGNING_DISABLED=true OSSRH_GROUP_ID=com.migeran.libgodot PREBUILT_REPO="$maven_repo" \
+              ./gradlew --no-daemon :lib:publishTemplateReleasePublicationToPrebuiltRepoRepository \
+              -x :lib:compileGodotNativeLibsTemplateReleaseArm64
+          ) 2>&1 | tee ci-results/android/maven.log
+          (cd "$maven_repo" && zip -qr "$GITHUB_WORKSPACE/ci-results/android/libgodot-android${ARTIFACT_SUFFIX}.zip" .)
+          (cd build/godot-cpp-android/release && zip -qr \
+            "$GITHUB_WORKSPACE/ci-results/android/godot-cpp-android.zip" godot-cpp-android)
+          if [[ "$LIBGODOT_AUDIO_VARIANT" == no-record ]]; then
+            python3 tools/check_no_record.py --platform android \
+              --aar ci-results/android/godot-lib.template_release.aar \
+              --maven-zip "ci-results/android/libgodot-android${ARTIFACT_SUFFIX}.zip" \
+              --manifest ci-results/android/no-record-audit.json
+          fi
           cp ci-input/arm64/android-template-release-native-symbols.zip ci-results/android/arm64-native-symbols.zip
           cp ci-input/arm32/android-template-release-native-symbols.zip ci-results/android/arm32-native-symbols.zip
           python3 tools/artifact_manifest.py ci-results/android --profile android-package \
@@ -433,7 +473,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: libgodot-android
+          name: libgodot-android${{ env.ARTIFACT_SUFFIX }}
           path: ci-results/android/
           compression-level: 1
           retention-days: 14
@@ -477,13 +517,13 @@ jobs:
       - name: Download iOS native libraries
         uses: actions/download-artifact@v8
         with:
-          name: libgodot-ios-device
+          name: libgodot-ios-device${{ env.ARTIFACT_SUFFIX }}
           path: ci-input/device
 
       - name: Download iOS simulator library
         uses: actions/download-artifact@v8
         with:
-          name: libgodot-ios-simulator
+          name: libgodot-ios-simulator${{ env.ARTIFACT_SUFFIX }}
           path: ci-input/simulator
 
       - name: Stage generated headers and libraries
@@ -532,8 +572,13 @@ jobs:
           set -euo pipefail
           mkdir -p ci-results/ios-packages
           cp build/libgodot/release/renderer-slices.json ci-results/ios-packages/
+          if [[ "$LIBGODOT_AUDIO_VARIANT" == no-record ]]; then
+            python3 tools/check_no_record.py --platform ios \
+              --xcframework build/libgodot/release/libgodot.xcframework \
+              --manifest ci-results/ios-packages/no-record-audit.json
+          fi
           ditto -c -k --keepParent build/libgodot/release/libgodot.xcframework \
-            ci-results/ios-packages/libgodot.xcframework.zip
+            "ci-results/ios-packages/libgodot${ARTIFACT_SUFFIX}.xcframework.zip"
           ditto -c -k --keepParent build/godot-cpp/release/libgodot-cpp.xcframework \
             ci-results/ios-packages/libgodot-cpp.xcframework.zip
           cp ios-framework.log godot-cpp-framework.log toolchain.txt ci-results/ios-packages/
@@ -553,7 +598,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: libgodot-ios-xcframeworks
+          name: libgodot-ios-xcframeworks${{ env.ARTIFACT_SUFFIX }}
           path: ci-results/ios-packages/
           compression-level: 0
           retention-days: 14
@@ -563,3 +608,5 @@ jobs:
     name: API, public headers and godot-cpp contract
     needs: native
     uses: ./.github/workflows/libgodot_contract.yml
+    with:
+      artifact_suffix: ${{ inputs.audio_variant == 'with-recording' && '-with-recording' || '-no-record' }}

@@ -58,7 +58,8 @@ class ArtifactsTest(unittest.TestCase):
             symbols = root / "symbols.txt"
             marker = root / "framework-link-invoked"
             env = dict(os.environ, PATH=str(commands) + os.pathsep + os.environ["PATH"],
-                       SDL_TEST_SYMBOLS=str(symbols), SDL_TEST_LINK_MARKER=str(marker))
+                       SDL_TEST_SYMBOLS=str(symbols), SDL_TEST_LINK_MARKER=str(marker),
+                       LIBGODOT_AUDIO_VARIANT="with-recording")
             exports = "0000 T _libgodot_create_godot_instance\n0000 T _libgodot_destroy_godot_instance\n"
             metal = "0000 T __ZN26RenderingDeviceDriverMetal10initializeEv\n"
             metal += "0000 T __ZN27RenderingContextDriverMetal10initializeEv\n"

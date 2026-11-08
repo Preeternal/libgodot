@@ -2,6 +2,10 @@ name: LibGodot 4.7 Contract
 
 on:
   workflow_call:
+    inputs:
+      artifact_suffix:
+        type: string
+        default: '-no-record'
 
 permissions:
   contents: read
@@ -42,7 +46,7 @@ jobs:
       - name: Download same-run macOS library, editor and contract
         uses: actions/download-artifact@v8
         with:
-          name: libgodot-macos
+          name: libgodot-macos${{ inputs.artifact_suffix }}
           path: ci-input/macos
 
       - name: Verify provenance and stage the generated contract
@@ -143,7 +147,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: libgodot-contract
+          name: libgodot-contract${{ inputs.artifact_suffix }}
           path: |
             ci-results/contract/
             api-validation.json

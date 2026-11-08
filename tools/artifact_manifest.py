@@ -36,6 +36,28 @@ def inventory(directory: Path) -> dict:
             if path.is_file() and path != directory / "artifacts-manifest.json"}
 
 
+def audio_variant(profile: str) -> str:
+    if profile.startswith(("android", "ios")):
+        variant = os.environ.get("LIBGODOT_AUDIO_VARIANT", "no-record")
+        if variant not in ("no-record", "with-recording"):
+            raise ValueError(f"Unknown audio variant: {variant}")
+        return variant
+    return "standard"
+
+
+def check_audio_audits(directory: Path, profile: str) -> None:
+    audits = [json.loads(path.read_text()) for path in directory.rglob("*no-record-audit.json")]
+    required = {"android", "ios"} if profile == "android-ios-local" else {"ios" if profile.startswith("ios") else "android"}
+    seen = set()
+    for audit in audits:
+        if (audit.get("schema") != "libgodot-no-record/v1" or audit.get("audio_variant") != "no-record"
+                or audit.get("microphone_api_references") != [] or not audit.get("libraries")):
+            raise ValueError("Invalid no-record binary audit")
+        seen.add(audit.get("platform"))
+    if not required.issubset(seen):
+        raise ValueError(f"Missing no-record binary audit for {sorted(required - seen)}")
+
+
 def verify(directory: Path) -> dict:
     manifest = json.loads((directory / "artifacts-manifest.json").read_text())
     if manifest["revisions"] != revisions():
@@ -45,6 +67,12 @@ def verify(directory: Path) -> dict:
             raise ValueError(f"Artifact is not from this run/attempt: {key}")
     if manifest["files"] != inventory(directory):
         raise ValueError("Uploaded file inventory/digests differ from manifest")
+    if manifest.get("profile") and audio_variant(manifest["profile"]) == "no-record":
+        if manifest.get("audio_variant") != "no-record":
+            raise ValueError("Expected no-record artifact; refusing a recording-capable or unidentified input")
+        check_audio_audits(directory, manifest["profile"])
+    elif manifest.get("audio_variant") and manifest["audio_variant"] != audio_variant(manifest["profile"]):
+        raise ValueError("Artifact audio variant does not match the selected build")
     return manifest
 
 
@@ -84,15 +112,23 @@ def main() -> None:
             raise ValueError(f"Missing generated contract: {path}")
         contract[name] = digest(path)
     version = json.loads((args.api_dir / "extension_api.json").read_text())["header"]
+    variant = audio_variant(args.profile)
+    if variant == "no-record" and command("git", "diff", "HEAD", "--name-only", cwd=ROOT / "godot"):
+        raise ValueError("Commit the engine source and pin it before generating no-record release provenance")
+    if variant == "no-record":
+        check_audio_audits(args.directory, args.profile)
     manifest = {
         "schema": "libgodot-ci-artifacts/v1", "profile": args.profile,
         "revisions": revisions(), "run": {key: os.environ.get(key) for key in
             ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_REPOSITORY")},
         "version": version, "build_flags": args.flags, "tools": tools,
+        "audio_variant": variant,
+        "audio_capabilities": {"playback": True, "microphone_capture": variant != "no-record"},
+        "maven_version": os.environ.get("GODOT_PUBLISH_VERSION"),
         "build_scripts_sha256": {name: digest(ROOT / name) for name in
             ("build_libgodot.sh", "build_libgodot_xcframework.sh", "build_godotcpp_android.sh",
              "build_godotcpp_xcframework.sh", "build_prebuilt_release.sh", "tools/prepare_godotcpp_api.py",
-             "tools/check_android_cpp_abi.py", "tools/check_ios_renderers.py")},
+             "tools/check_android_cpp_abi.py", "tools/check_ios_renderers.py", "tools/check_no_record.py")},
         "contract_sha256": contract,
         "debug_symbols": "See file inventory: Android unstripped native libraries; iOS framework dSYM directories",
         "files": inventory(args.directory),
