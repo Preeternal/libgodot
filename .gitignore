@@ -4,3 +4,10 @@ libgodot_framework/libgodot.xcodeproj/project.xcworkspace/xcuserdata/
 libgodot_framework/libgodot/libgodot.a
 
 .DS_Store
+
+__pycache__/
+*.pyc
+
+# Local implementation notes; generated release manifests belong in build/.
+/l1-artifacts-manifest.json
+/doc/L1-CI.md

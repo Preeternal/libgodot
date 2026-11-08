@@ -27,6 +27,9 @@ This screenshot shows an iOS application displaying 4 Godot Engine Windows each 
 
 ## Quickstart
 
+See [Continuous integration](doc/CI.md) for build validation, artifacts and
+local release packaging.
+
 This repository is set up for easy testing of LibGodot.
 
 Execute the following commands

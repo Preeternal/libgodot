@@ -21,7 +21,7 @@ args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 validator = runpy.run_path(str(root / "godot/tests/libgodot/check_library.py"))["library_manifest"]
 result = validator(args.library, args.symbols, args.platform, args.revision, args.target, args.library_type)
-# G1's validator checks arm64 only; the architecture is checked by readelf/lipo in CI.
+# The engine validator defaults to arm64; readelf/lipo checks the actual slice in CI.
 result["architecture"] = args.architecture
 if args.verify:
     if json.loads(args.manifest.read_text()) != result:
