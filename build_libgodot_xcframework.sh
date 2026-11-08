@@ -72,10 +72,49 @@ fi
 
 mkdir -p $BUILD_DIR
 
-cp $GODOT_DIR/core/extension/gdextension_interface.h $LIBGODOT_FRAMEWORK_DIR/libgodot/gdextension_interface.h
+if [ ! -f $BUILD_DIR/gdextension/gdextension_interface.h ]; then
+    echo "Cannot find generated gdextension_interface.h in $BUILD_DIR/gdextension"
+    echo "Run build_libgodot.sh --no-target --update-api first"
+    exit 1
+fi
+
+# A static archive can contain unresolved SDL references. Require their providers
+# before starting any framework build, including for locally supplied archives.
+validation_dir="$(mktemp -d)"
+trap 'rm -rf "$validation_dir"' EXIT
+validate_ios_archive() {
+    local archive="$1"
+    local slice_name="$2"
+    nm -gU "$archive" > "$validation_dir/symbols.txt"
+    python3 "$GODOT_DIR/tests/libgodot/check_library.py" \
+        --platform ios --target "$target" --library-type static_library \
+        --require-ios-sdl --revision "$(git -C "$GODOT_DIR" rev-parse HEAD)" \
+        --library "$archive" --symbols "$validation_dir/symbols.txt" \
+        --manifest "$validation_dir/manifest.json"
+    nm -U "$archive" > "$validation_dir/renderer-symbols.txt"
+    python3 "$BASE_DIR/tools/check_ios_renderers.py" \
+        --library "$archive" --symbols "$validation_dir/renderer-symbols.txt" --slice "$slice_name" \
+        --manifest "$validation_dir/renderer-manifest.json"
+}
+if [ "$target_build" -eq 1 ]; then
+    validate_ios_archive "$GODOT_DIR/bin/libgodot.ios.$target$suffix.arm64.a" device
+fi
+if [ "$simulator" -eq 1 ]; then
+    for simarch in arm64 x86_64; do
+        archive="$GODOT_DIR/bin/libgodot.ios.$target$suffix.$simarch.simulator.a"
+        if [ -f "$archive" ]; then
+            validate_ios_archive "$archive" simulator
+        fi
+    done
+fi
+
+cp $BUILD_DIR/gdextension/gdextension_interface.h $LIBGODOT_FRAMEWORK_DIR/libgodot/gdextension_interface.h
 cp $GODOT_DIR/core/extension/libgodot.h $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
 
-sed -i '' -e 's|^#include "gdextension_interface.h"|#include <libgodot/gdextension_interface.h>|' $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
+sed -i '' \
+    -e 's|^#include "gdextension_interface.h"|#include <libgodot/gdextension_interface.h>|' \
+    -e 's|^#include "core/extension/gdextension_interface.gen.h"|#include <libgodot/gdextension_interface.h>|' \
+    $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.h
 
 if [ $target_build -eq 1 ]
 then
@@ -85,7 +124,8 @@ cp -a $GODOT_DIR/bin/libgodot.ios.$target$suffix.arm64.a $LIBGODOT_FRAMEWORK_DIR
 rm -rf $BUILD_DIR/libgodot.framework*
 rm -rf $BUILD_DIR/ios_${target}
 cd $LIBGODOT_FRAMEWORK_DIR
-xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS' clean build
+xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS' \
+    CODE_SIGNING_ALLOWED=NO ARCHS=arm64 clean build
 
 cd $BASE_DIR
 mkdir -p $BUILD_DIR/ios_${target}
@@ -112,7 +152,9 @@ then
         lipo -create -output $LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.a $simulator_files
         rm -rf $BUILD_DIR/libgodot.framework*
         cd $LIBGODOT_FRAMEWORK_DIR
-        xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS Simulator' clean build
+        simulator_archs="$(lipo -archs "$LIBGODOT_FRAMEWORK_DIR/libgodot/libgodot.a")"
+        xcodebuild -scheme libgodot -configuration $config -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO "ARCHS=$simulator_archs" clean build
 
         cd $BASE_DIR
         mkdir -p $BUILD_DIR/ios_${target}_simulator
@@ -142,11 +184,18 @@ then
     find "$tmp_dir/libgodot.xcframework" -name 'libgodot' | grep 'libgodot\.framework/libgodot$' | xargs strip -x
 fi
 
+renderer_check_args=(--manifest "$tmp_dir/renderer-slices.json")
+if [ "$target_build" -eq 1 ]; then renderer_check_args+=(--require-slice device); fi
+if [ "$simulator" -eq 1 ]; then renderer_check_args+=(--require-slice simulator); fi
+python3 "$BASE_DIR/tools/check_ios_renderers.py" --xcframework "$tmp_dir/libgodot.xcframework" \
+    "${renderer_check_args[@]}"
+
 BUILD_LIBGODOT_TARGET_DIR="$BUILD_DIR/libgodot/$build_type"
 rm -rf $BUILD_LIBGODOT_TARGET_DIR
 mkdir -p $BUILD_LIBGODOT_TARGET_DIR
 
 cd $tmp_dir
 cp -Rvf libgodot.xcframework $BUILD_LIBGODOT_TARGET_DIR
+cp renderer-slices.json "$BUILD_LIBGODOT_TARGET_DIR/"
 
 rm -rf $tmp_dir

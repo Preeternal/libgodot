@@ -44,6 +44,7 @@ mkdir -p $PREBUILT_TARGET_DIR
 
 cd $BUILD_DIR/libgodot/release
 zip -r $PREBUILT_TARGET_DIR/libgodot.xcframework.zip libgodot.xcframework
+cp renderer-slices.json "$PREBUILT_TARGET_DIR/"
 
 cd $BUILD_DIR/godot-cpp/release
 zip -r $PREBUILT_TARGET_DIR/libgodot-cpp.xcframework.zip libgodot-cpp.xcframework
@@ -53,3 +54,9 @@ zip -r $PREBUILT_TARGET_DIR/godot-cpp-android.zip godot-cpp-android
 
 cp -vf $ANDROID_LIB_BUILD_DIR/libgodot-android.zip $PREBUILT_TARGET_DIR
 cp -vf $BASE_DIR/godot/bin/android-template-release-native-symbols.zip $PREBUILT_TARGET_DIR/libgodot-android-native-symbols.zip
+
+# Write provenance only after all builds and archives have completed successfully.
+cd "$BASE_DIR"
+python3 tools/artifact_manifest.py "$PREBUILT_TARGET_DIR" --profile android-ios-local \
+    --flags 'build_prebuilt_release.sh; host/API update; Android arm64+arm32 template_release; iOS arm64 device and available simulator slices template_release; godot-cpp template_release'
+python3 tools/artifact_manifest.py "$PREBUILT_TARGET_DIR" --verify

@@ -28,11 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GDEXTENSION_INTERFACE_H
-#define GDEXTENSION_INTERFACE_H
+#pragma once
 
 /* This is a C class header, you can copy it and use it directly in your own binders.
- * Together with the JSON file, you should be able to generate any binder.
+ * Together with the `extension_api.json` file, you should be able to generate any binder.
  */
 
 #ifndef __cplusplus
@@ -48,115 +47,94 @@ typedef uint16_t char16_t;
 extern "C" {
 #endif
 
-/* VARIANT TYPES */
-
 typedef enum {
-	GDEXTENSION_VARIANT_TYPE_NIL,
-
-	/*  atomic types */
-	GDEXTENSION_VARIANT_TYPE_BOOL,
-	GDEXTENSION_VARIANT_TYPE_INT,
-	GDEXTENSION_VARIANT_TYPE_FLOAT,
-	GDEXTENSION_VARIANT_TYPE_STRING,
-
-	/* math types */
-	GDEXTENSION_VARIANT_TYPE_VECTOR2,
-	GDEXTENSION_VARIANT_TYPE_VECTOR2I,
-	GDEXTENSION_VARIANT_TYPE_RECT2,
-	GDEXTENSION_VARIANT_TYPE_RECT2I,
-	GDEXTENSION_VARIANT_TYPE_VECTOR3,
-	GDEXTENSION_VARIANT_TYPE_VECTOR3I,
-	GDEXTENSION_VARIANT_TYPE_TRANSFORM2D,
-	GDEXTENSION_VARIANT_TYPE_VECTOR4,
-	GDEXTENSION_VARIANT_TYPE_VECTOR4I,
-	GDEXTENSION_VARIANT_TYPE_PLANE,
-	GDEXTENSION_VARIANT_TYPE_QUATERNION,
-	GDEXTENSION_VARIANT_TYPE_AABB,
-	GDEXTENSION_VARIANT_TYPE_BASIS,
-	GDEXTENSION_VARIANT_TYPE_TRANSFORM3D,
-	GDEXTENSION_VARIANT_TYPE_PROJECTION,
-
-	/* misc types */
-	GDEXTENSION_VARIANT_TYPE_COLOR,
-	GDEXTENSION_VARIANT_TYPE_STRING_NAME,
-	GDEXTENSION_VARIANT_TYPE_NODE_PATH,
-	GDEXTENSION_VARIANT_TYPE_RID,
-	GDEXTENSION_VARIANT_TYPE_OBJECT,
-	GDEXTENSION_VARIANT_TYPE_CALLABLE,
-	GDEXTENSION_VARIANT_TYPE_SIGNAL,
-	GDEXTENSION_VARIANT_TYPE_DICTIONARY,
-	GDEXTENSION_VARIANT_TYPE_ARRAY,
-
-	/* typed arrays */
-	GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_INT32_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_INT64_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_FLOAT32_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_FLOAT64_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR2_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR3_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY,
-	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR4_ARRAY,
-
-	GDEXTENSION_VARIANT_TYPE_VARIANT_MAX
+	GDEXTENSION_VARIANT_TYPE_NIL = 0,
+	GDEXTENSION_VARIANT_TYPE_BOOL = 1,
+	GDEXTENSION_VARIANT_TYPE_INT = 2,
+	GDEXTENSION_VARIANT_TYPE_FLOAT = 3,
+	GDEXTENSION_VARIANT_TYPE_STRING = 4,
+	GDEXTENSION_VARIANT_TYPE_VECTOR2 = 5,
+	GDEXTENSION_VARIANT_TYPE_VECTOR2I = 6,
+	GDEXTENSION_VARIANT_TYPE_RECT2 = 7,
+	GDEXTENSION_VARIANT_TYPE_RECT2I = 8,
+	GDEXTENSION_VARIANT_TYPE_VECTOR3 = 9,
+	GDEXTENSION_VARIANT_TYPE_VECTOR3I = 10,
+	GDEXTENSION_VARIANT_TYPE_TRANSFORM2D = 11,
+	GDEXTENSION_VARIANT_TYPE_VECTOR4 = 12,
+	GDEXTENSION_VARIANT_TYPE_VECTOR4I = 13,
+	GDEXTENSION_VARIANT_TYPE_PLANE = 14,
+	GDEXTENSION_VARIANT_TYPE_QUATERNION = 15,
+	GDEXTENSION_VARIANT_TYPE_AABB = 16,
+	GDEXTENSION_VARIANT_TYPE_BASIS = 17,
+	GDEXTENSION_VARIANT_TYPE_TRANSFORM3D = 18,
+	GDEXTENSION_VARIANT_TYPE_PROJECTION = 19,
+	GDEXTENSION_VARIANT_TYPE_COLOR = 20,
+	GDEXTENSION_VARIANT_TYPE_STRING_NAME = 21,
+	GDEXTENSION_VARIANT_TYPE_NODE_PATH = 22,
+	GDEXTENSION_VARIANT_TYPE_RID = 23,
+	GDEXTENSION_VARIANT_TYPE_OBJECT = 24,
+	GDEXTENSION_VARIANT_TYPE_CALLABLE = 25,
+	GDEXTENSION_VARIANT_TYPE_SIGNAL = 26,
+	GDEXTENSION_VARIANT_TYPE_DICTIONARY = 27,
+	GDEXTENSION_VARIANT_TYPE_ARRAY = 28,
+	GDEXTENSION_VARIANT_TYPE_PACKED_BYTE_ARRAY = 29,
+	GDEXTENSION_VARIANT_TYPE_PACKED_INT32_ARRAY = 30,
+	GDEXTENSION_VARIANT_TYPE_PACKED_INT64_ARRAY = 31,
+	GDEXTENSION_VARIANT_TYPE_PACKED_FLOAT32_ARRAY = 32,
+	GDEXTENSION_VARIANT_TYPE_PACKED_FLOAT64_ARRAY = 33,
+	GDEXTENSION_VARIANT_TYPE_PACKED_STRING_ARRAY = 34,
+	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR2_ARRAY = 35,
+	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR3_ARRAY = 36,
+	GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY = 37,
+	GDEXTENSION_VARIANT_TYPE_PACKED_VECTOR4_ARRAY = 38,
+	GDEXTENSION_VARIANT_TYPE_VARIANT_MAX = 39,
 } GDExtensionVariantType;
 
 typedef enum {
-	/* comparison */
-	GDEXTENSION_VARIANT_OP_EQUAL,
-	GDEXTENSION_VARIANT_OP_NOT_EQUAL,
-	GDEXTENSION_VARIANT_OP_LESS,
-	GDEXTENSION_VARIANT_OP_LESS_EQUAL,
-	GDEXTENSION_VARIANT_OP_GREATER,
-	GDEXTENSION_VARIANT_OP_GREATER_EQUAL,
-
-	/* mathematic */
-	GDEXTENSION_VARIANT_OP_ADD,
-	GDEXTENSION_VARIANT_OP_SUBTRACT,
-	GDEXTENSION_VARIANT_OP_MULTIPLY,
-	GDEXTENSION_VARIANT_OP_DIVIDE,
-	GDEXTENSION_VARIANT_OP_NEGATE,
-	GDEXTENSION_VARIANT_OP_POSITIVE,
-	GDEXTENSION_VARIANT_OP_MODULE,
-	GDEXTENSION_VARIANT_OP_POWER,
-
-	/* bitwise */
-	GDEXTENSION_VARIANT_OP_SHIFT_LEFT,
-	GDEXTENSION_VARIANT_OP_SHIFT_RIGHT,
-	GDEXTENSION_VARIANT_OP_BIT_AND,
-	GDEXTENSION_VARIANT_OP_BIT_OR,
-	GDEXTENSION_VARIANT_OP_BIT_XOR,
-	GDEXTENSION_VARIANT_OP_BIT_NEGATE,
-
-	/* logic */
-	GDEXTENSION_VARIANT_OP_AND,
-	GDEXTENSION_VARIANT_OP_OR,
-	GDEXTENSION_VARIANT_OP_XOR,
-	GDEXTENSION_VARIANT_OP_NOT,
-
-	/* containment */
-	GDEXTENSION_VARIANT_OP_IN,
-	GDEXTENSION_VARIANT_OP_MAX
-
+	GDEXTENSION_VARIANT_OP_EQUAL = 0,
+	GDEXTENSION_VARIANT_OP_NOT_EQUAL = 1,
+	GDEXTENSION_VARIANT_OP_LESS = 2,
+	GDEXTENSION_VARIANT_OP_LESS_EQUAL = 3,
+	GDEXTENSION_VARIANT_OP_GREATER = 4,
+	GDEXTENSION_VARIANT_OP_GREATER_EQUAL = 5,
+	GDEXTENSION_VARIANT_OP_ADD = 6,
+	GDEXTENSION_VARIANT_OP_SUBTRACT = 7,
+	GDEXTENSION_VARIANT_OP_MULTIPLY = 8,
+	GDEXTENSION_VARIANT_OP_DIVIDE = 9,
+	GDEXTENSION_VARIANT_OP_NEGATE = 10,
+	GDEXTENSION_VARIANT_OP_POSITIVE = 11,
+	GDEXTENSION_VARIANT_OP_MODULE = 12,
+	GDEXTENSION_VARIANT_OP_POWER = 13,
+	GDEXTENSION_VARIANT_OP_SHIFT_LEFT = 14,
+	GDEXTENSION_VARIANT_OP_SHIFT_RIGHT = 15,
+	GDEXTENSION_VARIANT_OP_BIT_AND = 16,
+	GDEXTENSION_VARIANT_OP_BIT_OR = 17,
+	GDEXTENSION_VARIANT_OP_BIT_XOR = 18,
+	GDEXTENSION_VARIANT_OP_BIT_NEGATE = 19,
+	GDEXTENSION_VARIANT_OP_AND = 20,
+	GDEXTENSION_VARIANT_OP_OR = 21,
+	GDEXTENSION_VARIANT_OP_XOR = 22,
+	GDEXTENSION_VARIANT_OP_NOT = 23,
+	GDEXTENSION_VARIANT_OP_IN = 24,
+	GDEXTENSION_VARIANT_OP_MAX = 25,
 } GDExtensionVariantOperator;
 
-// In this API there are multiple functions which expect the caller to pass a pointer
-// on return value as parameter.
-// In order to make it clear if the caller should initialize the return value or not
-// we have two flavor of types:
-// - `GDExtensionXXXPtr` for pointer on an initialized value
-// - `GDExtensionUninitializedXXXPtr` for pointer on uninitialized value
-//
-// Notes:
-// - Not respecting those requirements can seems harmless, but will lead to unexpected
-//   segfault or memory leak (for instance with a specific compiler/OS, or when two
-//   native extensions start doing ptrcall on each other).
-// - Initialization must be done with the function pointer returned by `variant_get_ptr_constructor`,
-//   zero-initializing the variable should not be considered a valid initialization method here !
-// - Some types have no destructor (see `extension_api.json`'s `has_destructor` field), for
-//   them it is always safe to skip the constructor for the return value if you are in a hurry ;-)
-
+/* In this API there are multiple functions which expect the caller to pass a pointer
+ * on return value as parameter.
+ * In order to make it clear if the caller should initialize the return value or not
+ * we have two flavor of types:
+ * - `GDExtensionXXXPtr` for pointer on an initialized value
+ * - `GDExtensionUninitializedXXXPtr` for pointer on uninitialized value
+ *
+ * Notes:
+ * - Not respecting those requirements can seems harmless, but will lead to unexpected
+ * segfault or memory leak (for instance with a specific compiler/OS, or when two
+ * native extensions start doing ptrcall on each other).
+ * - Initialization must be done with the function pointer returned by `variant_get_ptr_constructor`,
+ * zero-initializing the variable should not be considered a valid initialization method here !
+ * - Some types have no destructor (see `extension_api.json`'s `has_destructor` field), for
+ * them it is always safe to skip the constructor for the return value if you are in a hurry ;-)
+ */
 typedef void *GDExtensionVariantPtr;
 typedef const void *GDExtensionConstVariantPtr;
 typedef void *GDExtensionUninitializedVariantPtr;
@@ -178,17 +156,18 @@ typedef uint8_t GDExtensionBool;
 typedef uint64_t GDObjectInstanceID;
 typedef void *GDExtensionRefPtr;
 typedef const void *GDExtensionConstRefPtr;
-
-/* VARIANT DATA I/O */
-
 typedef enum {
-	GDEXTENSION_CALL_OK,
-	GDEXTENSION_CALL_ERROR_INVALID_METHOD,
-	GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT, // Expected a different variant type.
-	GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS, // Expected lower number of arguments.
-	GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS, // Expected higher number of arguments.
-	GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL,
-	GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST, // Used for const call.
+	GDEXTENSION_CALL_OK = 0,
+	GDEXTENSION_CALL_ERROR_INVALID_METHOD = 1,
+	/* Expected a different variant type. */
+	GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT = 2,
+	/* Expected lower number of arguments. */
+	GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS = 3,
+	/* Expected higher number of arguments. */
+	GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS = 4,
+	GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL = 5,
+	/* Used for const call. */
+	GDEXTENSION_CALL_ERROR_METHOD_NOT_CONST = 6,
 } GDExtensionCallErrorType;
 
 typedef struct {
@@ -201,7 +180,7 @@ typedef void (*GDExtensionVariantFromTypeConstructorFunc)(GDExtensionUninitializ
 typedef void (*GDExtensionTypeFromVariantConstructorFunc)(GDExtensionUninitializedTypePtr, GDExtensionVariantPtr);
 typedef void *(*GDExtensionVariantGetInternalPtrFunc)(GDExtensionVariantPtr);
 typedef void (*GDExtensionPtrOperatorEvaluator)(GDExtensionConstTypePtr p_left, GDExtensionConstTypePtr p_right, GDExtensionTypePtr r_result);
-typedef void (*GDExtensionPtrBuiltInMethod)(GDExtensionTypePtr p_base, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_return, int p_argument_count);
+typedef void (*GDExtensionPtrBuiltInMethod)(GDExtensionTypePtr p_base, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_return, int32_t p_argument_count);
 typedef void (*GDExtensionPtrConstructor)(GDExtensionUninitializedTypePtr p_base, const GDExtensionConstTypePtr *p_args);
 typedef void (*GDExtensionPtrDestructor)(GDExtensionTypePtr p_base);
 typedef void (*GDExtensionPtrSetter)(GDExtensionTypePtr p_base, GDExtensionConstTypePtr p_value);
@@ -211,74 +190,77 @@ typedef void (*GDExtensionPtrIndexedGetter)(GDExtensionConstTypePtr p_base, GDEx
 typedef void (*GDExtensionPtrKeyedSetter)(GDExtensionTypePtr p_base, GDExtensionConstTypePtr p_key, GDExtensionConstTypePtr p_value);
 typedef void (*GDExtensionPtrKeyedGetter)(GDExtensionConstTypePtr p_base, GDExtensionConstTypePtr p_key, GDExtensionTypePtr r_value);
 typedef uint32_t (*GDExtensionPtrKeyedChecker)(GDExtensionConstVariantPtr p_base, GDExtensionConstVariantPtr p_key);
-typedef void (*GDExtensionPtrUtilityFunction)(GDExtensionTypePtr r_return, const GDExtensionConstTypePtr *p_args, int p_argument_count);
-
+typedef void (*GDExtensionPtrUtilityFunction)(GDExtensionTypePtr r_return, const GDExtensionConstTypePtr *p_args, int32_t p_argument_count);
 typedef GDExtensionObjectPtr (*GDExtensionClassConstructor)();
-
 typedef void *(*GDExtensionInstanceBindingCreateCallback)(void *p_token, void *p_instance);
 typedef void (*GDExtensionInstanceBindingFreeCallback)(void *p_token, void *p_instance, void *p_binding);
 typedef GDExtensionBool (*GDExtensionInstanceBindingReferenceCallback)(void *p_token, void *p_binding, GDExtensionBool p_reference);
-
 typedef struct {
 	GDExtensionInstanceBindingCreateCallback create_callback;
 	GDExtensionInstanceBindingFreeCallback free_callback;
 	GDExtensionInstanceBindingReferenceCallback reference_callback;
 } GDExtensionInstanceBindingCallbacks;
 
-/* EXTENSION CLASSES */
-
 typedef void *GDExtensionClassInstancePtr;
-
 typedef GDExtensionBool (*GDExtensionClassSet)(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value);
 typedef GDExtensionBool (*GDExtensionClassGet)(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
 typedef uint64_t (*GDExtensionClassGetRID)(GDExtensionClassInstancePtr p_instance);
-
 typedef struct {
 	GDExtensionVariantType type;
 	GDExtensionStringNamePtr name;
 	GDExtensionStringNamePtr class_name;
-	uint32_t hint; // Bitfield of `PropertyHint` (defined in `extension_api.json`).
+	/* Bitfield of `PropertyHint` (defined in `extension_api.json`). */
+	uint32_t hint;
 	GDExtensionStringPtr hint_string;
-	uint32_t usage; // Bitfield of `PropertyUsageFlags` (defined in `extension_api.json`).
+	/* Bitfield of `PropertyUsageFlags` (defined in `extension_api.json`). */
+	uint32_t usage;
 } GDExtensionPropertyInfo;
 
 typedef struct {
 	GDExtensionStringNamePtr name;
 	GDExtensionPropertyInfo return_value;
-	uint32_t flags; // Bitfield of `GDExtensionClassMethodFlags`.
+	/* Bitfield of `GDExtensionClassMethodFlags`. */
+	uint32_t flags;
 	int32_t id;
-
 	/* Arguments: `default_arguments` is an array of size `argument_count`. */
 	uint32_t argument_count;
 	GDExtensionPropertyInfo *arguments;
-
 	/* Default arguments: `default_arguments` is an array of size `default_argument_count`. */
 	uint32_t default_argument_count;
 	GDExtensionVariantPtr *default_arguments;
 } GDExtensionMethodInfo;
 
 typedef const GDExtensionPropertyInfo *(*GDExtensionClassGetPropertyList)(GDExtensionClassInstancePtr p_instance, uint32_t *r_count);
-typedef void (*GDExtensionClassFreePropertyList)(GDExtensionClassInstancePtr p_instance, const GDExtensionPropertyInfo *p_list);
+typedef void (*GDExtensionClassFreePropertyList)(GDExtensionClassInstancePtr p_instance, const GDExtensionPropertyInfo *p_list); /* Deprecated in Godot 4.3. Use `GDExtensionClassFreePropertyList2` instead. */
 typedef void (*GDExtensionClassFreePropertyList2)(GDExtensionClassInstancePtr p_instance, const GDExtensionPropertyInfo *p_list, uint32_t p_count);
 typedef GDExtensionBool (*GDExtensionClassPropertyCanRevert)(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name);
 typedef GDExtensionBool (*GDExtensionClassPropertyGetRevert)(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
 typedef GDExtensionBool (*GDExtensionClassValidateProperty)(GDExtensionClassInstancePtr p_instance, GDExtensionPropertyInfo *p_property);
-typedef void (*GDExtensionClassNotification)(GDExtensionClassInstancePtr p_instance, int32_t p_what); // Deprecated. Use GDExtensionClassNotification2 instead.
+typedef void (*GDExtensionClassNotification)(GDExtensionClassInstancePtr p_instance, int32_t p_what); /* Deprecated in Godot 4.2. Use `GDExtensionClassNotification2` instead. */
 typedef void (*GDExtensionClassNotification2)(GDExtensionClassInstancePtr p_instance, int32_t p_what, GDExtensionBool p_reversed);
 typedef void (*GDExtensionClassToString)(GDExtensionClassInstancePtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr p_out);
 typedef void (*GDExtensionClassReference)(GDExtensionClassInstancePtr p_instance);
 typedef void (*GDExtensionClassUnreference)(GDExtensionClassInstancePtr p_instance);
 typedef void (*GDExtensionClassCallVirtual)(GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
-typedef GDExtensionObjectPtr (*GDExtensionClassCreateInstance)(void *p_class_userdata);
-typedef GDExtensionObjectPtr (*GDExtensionClassCreateInstance2)(void *p_class_userdata, GDExtensionBool p_notify_postinitialize);
+/* Called to construct an instance of the class.
+ * For classes descending from RefCounted, the reference count should be zero.
+ */
+typedef GDExtensionObjectPtr (*GDExtensionClassCreateInstance)(void *p_class_userdata); /* Deprecated in Godot 4.4. Use `GDExtensionClassCreateInstance3` instead. */
+/* Called to construct an instance of the class.
+ * For classes descending from RefCounted, the reference count should be zero.
+ */
+typedef GDExtensionObjectPtr (*GDExtensionClassCreateInstance2)(void *p_class_userdata, GDExtensionBool p_notify_postinitialize); /* Deprecated in Godot 4.7. Use `GDExtensionClassCreateInstance3` instead. */
+/* Called to construct an instance of the class.
+ * For classes descending from RefCounted, the reference count should already be incremented by 1.
+ */
+typedef GDExtensionObjectPtr (*GDExtensionClassCreateInstance3)(void *p_class_userdata, GDExtensionBool p_notify_postinitialize);
 typedef void (*GDExtensionClassFreeInstance)(void *p_class_userdata, GDExtensionClassInstancePtr p_instance);
 typedef GDExtensionClassInstancePtr (*GDExtensionClassRecreateInstance)(void *p_class_userdata, GDExtensionObjectPtr p_object);
-typedef GDExtensionClassCallVirtual (*GDExtensionClassGetVirtual)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name);
+typedef GDExtensionClassCallVirtual (*GDExtensionClassGetVirtual)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name); /* Deprecated in Godot 4.4. Use `GDExtensionClassGetVirtual2` instead. */
 typedef GDExtensionClassCallVirtual (*GDExtensionClassGetVirtual2)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash);
-typedef void *(*GDExtensionClassGetVirtualCallData)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name);
+typedef void *(*GDExtensionClassGetVirtualCallData)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name); /* Deprecated in Godot 4.4. Use `GDExtensionClassGetVirtualCallData2` instead. */
 typedef void *(*GDExtensionClassGetVirtualCallData2)(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash);
 typedef void (*GDExtensionClassCallVirtualWithData)(GDExtensionClassInstancePtr p_instance, GDExtensionConstStringNamePtr p_name, void *p_virtual_call_userdata, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
-
 typedef struct {
 	GDExtensionBool is_virtual;
 	GDExtensionBool is_abstract;
@@ -292,12 +274,16 @@ typedef struct {
 	GDExtensionClassToString to_string_func;
 	GDExtensionClassReference reference_func;
 	GDExtensionClassUnreference unreference_func;
-	GDExtensionClassCreateInstance create_instance_func; // (Default) constructor; mandatory. If the class is not instantiable, consider making it virtual or abstract.
-	GDExtensionClassFreeInstance free_instance_func; // Destructor; mandatory.
-	GDExtensionClassGetVirtual get_virtual_func; // Queries a virtual function by name and returns a callback to invoke the requested virtual function.
+	/* Class constructor. Required unless the class is virtual or abstract. */
+	GDExtensionClassCreateInstance create_instance_func;
+	/* Destructor; mandatory. */
+	GDExtensionClassFreeInstance free_instance_func;
+	/* Queries a virtual function by name and returns a callback to invoke the requested virtual function. */
+	GDExtensionClassGetVirtual get_virtual_func;
 	GDExtensionClassGetRID get_rid_func;
-	void *class_userdata; // Per-class user data, later accessible in instance bindings.
-} GDExtensionClassCreationInfo; // Deprecated. Use GDExtensionClassCreationInfo4 instead.
+	/* Per-class user data, later accessible in instance bindings. */
+	void *class_userdata;
+} GDExtensionClassCreationInfo; /* Deprecated in Godot 4.2. Use `GDExtensionClassCreationInfo6` instead. */
 
 typedef struct {
 	GDExtensionBool is_virtual;
@@ -314,23 +300,27 @@ typedef struct {
 	GDExtensionClassToString to_string_func;
 	GDExtensionClassReference reference_func;
 	GDExtensionClassUnreference unreference_func;
-	GDExtensionClassCreateInstance create_instance_func; // (Default) constructor; mandatory. If the class is not instantiable, consider making it virtual or abstract.
-	GDExtensionClassFreeInstance free_instance_func; // Destructor; mandatory.
+	/* Class constructor. Required unless the class is virtual or abstract. */
+	GDExtensionClassCreateInstance create_instance_func;
+	/* Destructor; mandatory. */
+	GDExtensionClassFreeInstance free_instance_func;
 	GDExtensionClassRecreateInstance recreate_instance_func;
-	// Queries a virtual function by name and returns a callback to invoke the requested virtual function.
+	/* Queries a virtual function by name and returns a callback to invoke the requested virtual function. */
 	GDExtensionClassGetVirtual get_virtual_func;
-	// Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
-	// need or benefit from extra data when calling virtual functions.
-	// Returns user data that will be passed to `call_virtual_with_data_func`.
-	// Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
-	// Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
-	// You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	/* Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
+	 * need or benefit from extra data when calling virtual functions.
+	 * Returns user data that will be passed to `call_virtual_with_data_func`.
+	 * Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
+	 * Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
+	 * You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	 */
 	GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
-	// Used to call virtual functions when `get_virtual_call_data_func` is not null.
+	/* Used to call virtual functions when `get_virtual_call_data_func` is not null. */
 	GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
 	GDExtensionClassGetRID get_rid_func;
-	void *class_userdata; // Per-class user data, later accessible in instance bindings.
-} GDExtensionClassCreationInfo2; // Deprecated. Use GDExtensionClassCreationInfo4 instead.
+	/* Per-class user data, later accessible in instance bindings. */
+	void *class_userdata;
+} GDExtensionClassCreationInfo2; /* Deprecated in Godot 4.3. Use `GDExtensionClassCreationInfo6` instead. */
 
 typedef struct {
 	GDExtensionBool is_virtual;
@@ -348,23 +338,27 @@ typedef struct {
 	GDExtensionClassToString to_string_func;
 	GDExtensionClassReference reference_func;
 	GDExtensionClassUnreference unreference_func;
-	GDExtensionClassCreateInstance create_instance_func; // (Default) constructor; mandatory. If the class is not instantiable, consider making it virtual or abstract.
-	GDExtensionClassFreeInstance free_instance_func; // Destructor; mandatory.
+	/* Class constructor. Required unless the class is virtual or abstract. */
+	GDExtensionClassCreateInstance create_instance_func;
+	/* Destructor; mandatory. */
+	GDExtensionClassFreeInstance free_instance_func;
 	GDExtensionClassRecreateInstance recreate_instance_func;
-	// Queries a virtual function by name and returns a callback to invoke the requested virtual function.
+	/* Queries a virtual function by name and returns a callback to invoke the requested virtual function. */
 	GDExtensionClassGetVirtual get_virtual_func;
-	// Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
-	// need or benefit from extra data when calling virtual functions.
-	// Returns user data that will be passed to `call_virtual_with_data_func`.
-	// Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
-	// Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
-	// You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	/* Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
+	 * need or benefit from extra data when calling virtual functions.
+	 * Returns user data that will be passed to `call_virtual_with_data_func`.
+	 * Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
+	 * Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
+	 * You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	 */
 	GDExtensionClassGetVirtualCallData get_virtual_call_data_func;
-	// Used to call virtual functions when `get_virtual_call_data_func` is not null.
+	/* Used to call virtual functions when `get_virtual_call_data_func` is not null. */
 	GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
 	GDExtensionClassGetRID get_rid_func;
-	void *class_userdata; // Per-class user data, later accessible in instance bindings.
-} GDExtensionClassCreationInfo3; // Deprecated. Use GDExtensionClassCreationInfo4 instead.
+	/* Per-class user data, later accessible in instance bindings. */
+	void *class_userdata;
+} GDExtensionClassCreationInfo3; /* Deprecated in Godot 4.4. Use `GDExtensionClassCreationInfo6` instead. */
 
 typedef struct {
 	GDExtensionBool is_virtual;
@@ -383,32 +377,69 @@ typedef struct {
 	GDExtensionClassToString to_string_func;
 	GDExtensionClassReference reference_func;
 	GDExtensionClassUnreference unreference_func;
-	GDExtensionClassCreateInstance2 create_instance_func; // (Default) constructor; mandatory. If the class is not instantiable, consider making it virtual or abstract.
-	GDExtensionClassFreeInstance free_instance_func; // Destructor; mandatory.
+	/* Class constructor. Required unless the class is virtual or abstract. */
+	GDExtensionClassCreateInstance2 create_instance_func;
+	/* Destructor; mandatory. */
+	GDExtensionClassFreeInstance free_instance_func;
 	GDExtensionClassRecreateInstance recreate_instance_func;
-	// Queries a virtual function by name and returns a callback to invoke the requested virtual function.
+	/* Queries a virtual function by name and returns a callback to invoke the requested virtual function. */
 	GDExtensionClassGetVirtual2 get_virtual_func;
-	// Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
-	// need or benefit from extra data when calling virtual functions.
-	// Returns user data that will be passed to `call_virtual_with_data_func`.
-	// Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
-	// Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
-	// You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	/* Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
+	 * need or benefit from extra data when calling virtual functions.
+	 * Returns user data that will be passed to `call_virtual_with_data_func`.
+	 * Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
+	 * Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
+	 * You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	 */
 	GDExtensionClassGetVirtualCallData2 get_virtual_call_data_func;
-	// Used to call virtual functions when `get_virtual_call_data_func` is not null.
+	/* Used to call virtual functions when `get_virtual_call_data_func` is not null. */
 	GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
-	void *class_userdata; // Per-class user data, later accessible in instance bindings.
-} GDExtensionClassCreationInfo4;
+	/* Per-class user data, later accessible in instance bindings. */
+	void *class_userdata;
+} GDExtensionClassCreationInfo4; /* Deprecated in Godot 4.5. Use `GDExtensionClassCreationInfo6` instead. */
 
-typedef GDExtensionClassCreationInfo4 GDExtensionClassCreationInfo5;
+typedef GDExtensionClassCreationInfo4 GDExtensionClassCreationInfo5; /* Deprecated in Godot 4.7. Use `GDExtensionClassCreationInfo6` instead. */
+typedef struct {
+	GDExtensionBool is_virtual;
+	GDExtensionBool is_abstract;
+	GDExtensionBool is_exposed;
+	GDExtensionBool is_runtime;
+	GDExtensionConstStringPtr icon_path;
+	GDExtensionClassSet set_func;
+	GDExtensionClassGet get_func;
+	GDExtensionClassGetPropertyList get_property_list_func;
+	GDExtensionClassFreePropertyList2 free_property_list_func;
+	GDExtensionClassPropertyCanRevert property_can_revert_func;
+	GDExtensionClassPropertyGetRevert property_get_revert_func;
+	GDExtensionClassValidateProperty validate_property_func;
+	GDExtensionClassNotification2 notification_func;
+	GDExtensionClassToString to_string_func;
+	GDExtensionClassReference reference_func;
+	GDExtensionClassUnreference unreference_func;
+	/* Class constructor. Required unless the class is virtual or abstract. */
+	GDExtensionClassCreateInstance3 create_instance_func;
+	/* Destructor; mandatory. */
+	GDExtensionClassFreeInstance free_instance_func;
+	GDExtensionClassRecreateInstance recreate_instance_func;
+	/* Queries a virtual function by name and returns a callback to invoke the requested virtual function. */
+	GDExtensionClassGetVirtual2 get_virtual_func;
+	/* Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
+	 * need or benefit from extra data when calling virtual functions.
+	 * Returns user data that will be passed to `call_virtual_with_data_func`.
+	 * Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
+	 * Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
+	 * You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+	 */
+	GDExtensionClassGetVirtualCallData2 get_virtual_call_data_func;
+	/* Used to call virtual functions when `get_virtual_call_data_func` is not null. */
+	GDExtensionClassCallVirtualWithData call_virtual_with_data_func;
+	/* Per-class user data, later accessible in instance bindings. */
+	void *class_userdata;
+} GDExtensionClassCreationInfo6;
 
 typedef void *GDExtensionClassLibraryPtr;
-
 /* Passed a pointer to a PackedStringArray that should be filled with the classes that may be used by the GDExtension. */
 typedef void (*GDExtensionEditorGetClassesUsedCallback)(GDExtensionTypePtr p_packed_string_array);
-
-/* Method */
-
 typedef enum {
 	GDEXTENSION_METHOD_FLAG_NORMAL = 1,
 	GDEXTENSION_METHOD_FLAG_EDITOR = 2,
@@ -416,36 +447,37 @@ typedef enum {
 	GDEXTENSION_METHOD_FLAG_VIRTUAL = 8,
 	GDEXTENSION_METHOD_FLAG_VARARG = 16,
 	GDEXTENSION_METHOD_FLAG_STATIC = 32,
-	GDEXTENSION_METHOD_FLAGS_DEFAULT = GDEXTENSION_METHOD_FLAG_NORMAL,
+	GDEXTENSION_METHOD_FLAG_VIRTUAL_REQUIRED = 128,
+	GDEXTENSION_METHOD_FLAGS_DEFAULT = 1,
 } GDExtensionClassMethodFlags;
 
 typedef enum {
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT8,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT16,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT32,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT64,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT8,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT16,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT32,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT64,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_FLOAT,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_DOUBLE,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR16,
-	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR32,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE = 0,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT8 = 1,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT16 = 2,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT32 = 3,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_INT64 = 4,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT8 = 5,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT16 = 6,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT32 = 7,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_UINT64 = 8,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_FLOAT = 9,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_REAL_IS_DOUBLE = 10,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR16 = 11,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_INT_IS_CHAR32 = 12,
+	GDEXTENSION_METHOD_ARGUMENT_METADATA_OBJECT_IS_REQUIRED = 13,
 } GDExtensionClassMethodArgumentMetadata;
 
 typedef void (*GDExtensionClassMethodCall)(void *method_userdata, GDExtensionClassInstancePtr p_instance, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
 typedef void (*GDExtensionClassMethodValidatedCall)(void *method_userdata, GDExtensionClassInstancePtr p_instance, const GDExtensionConstVariantPtr *p_args, GDExtensionVariantPtr r_return);
 typedef void (*GDExtensionClassMethodPtrCall)(void *method_userdata, GDExtensionClassInstancePtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
-
 typedef struct {
 	GDExtensionStringNamePtr name;
 	void *method_userdata;
 	GDExtensionClassMethodCall call_func;
 	GDExtensionClassMethodPtrCall ptrcall_func;
-	uint32_t method_flags; // Bitfield of `GDExtensionClassMethodFlags`.
-
+	/* Bitfield of `GDExtensionClassMethodFlags`. */
+	uint32_t method_flags;
 	/* If `has_return_value` is false, `return_value_info` and `return_value_metadata` are ignored.
 	 *
 	 * @todo Consider dropping `has_return_value` and making the other two properties match `GDExtensionMethodInfo` and `GDExtensionClassVirtualMethod` for consistency in future version of this struct.
@@ -453,7 +485,6 @@ typedef struct {
 	GDExtensionBool has_return_value;
 	GDExtensionPropertyInfo *return_value_info;
 	GDExtensionClassMethodArgumentMetadata return_value_metadata;
-
 	/* Arguments: `arguments_info` and `arguments_metadata` are array of size `argument_count`.
 	 * Name and hint information for the argument can be omitted in release builds. Class name should always be present if it applies.
 	 *
@@ -462,7 +493,6 @@ typedef struct {
 	uint32_t argument_count;
 	GDExtensionPropertyInfo *arguments_info;
 	GDExtensionClassMethodArgumentMetadata *arguments_metadata;
-
 	/* Default arguments: `default_arguments` is an array of size `default_argument_count`. */
 	uint32_t default_argument_count;
 	GDExtensionVariantPtr *default_arguments;
@@ -470,11 +500,10 @@ typedef struct {
 
 typedef struct {
 	GDExtensionStringNamePtr name;
-	uint32_t method_flags; // Bitfield of `GDExtensionClassMethodFlags`.
-
+	/* Bitfield of `GDExtensionClassMethodFlags`. */
+	uint32_t method_flags;
 	GDExtensionPropertyInfo return_value;
 	GDExtensionClassMethodArgumentMetadata return_value_metadata;
-
 	uint32_t argument_count;
 	GDExtensionPropertyInfo *arguments;
 	GDExtensionClassMethodArgumentMetadata *arguments_metadata;
@@ -483,269 +512,200 @@ typedef struct {
 typedef void (*GDExtensionCallableCustomCall)(void *callable_userdata, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
 typedef GDExtensionBool (*GDExtensionCallableCustomIsValid)(void *callable_userdata);
 typedef void (*GDExtensionCallableCustomFree)(void *callable_userdata);
-
 typedef uint32_t (*GDExtensionCallableCustomHash)(void *callable_userdata);
 typedef GDExtensionBool (*GDExtensionCallableCustomEqual)(void *callable_userdata_a, void *callable_userdata_b);
 typedef GDExtensionBool (*GDExtensionCallableCustomLessThan)(void *callable_userdata_a, void *callable_userdata_b);
-
 typedef void (*GDExtensionCallableCustomToString)(void *callable_userdata, GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
-
 typedef GDExtensionInt (*GDExtensionCallableCustomGetArgumentCount)(void *callable_userdata, GDExtensionBool *r_is_valid);
-
+/* Only `call_func` and `token` are strictly required, however, `object_id` should be passed if its not a static method.
+ *
+ * `token` should point to an address that uniquely identifies the GDExtension (for example, the
+ * `GDExtensionClassLibraryPtr` passed to the entry symbol function.
+ *
+ * `hash_func`, `equal_func`, and `less_than_func` are optional. If not provided both `call_func` and
+ * `callable_userdata` together are used as the identity of the callable for hashing and comparison purposes.
+ *
+ * The hash returned by `hash_func` is cached, `hash_func` will not be called more than once per callable.
+ *
+ * `is_valid_func` is necessary if the validity of the callable can change before destruction.
+ *
+ * `free_func` is necessary if `callable_userdata` needs to be cleaned up when the callable is freed.
+ */
 typedef struct {
-	/* Only `call_func` and `token` are strictly required, however, `object_id` should be passed if its not a static method.
-	 *
-	 * `token` should point to an address that uniquely identifies the GDExtension (for example, the
-	 * `GDExtensionClassLibraryPtr` passed to the entry symbol function.
-	 *
-	 * `hash_func`, `equal_func`, and `less_than_func` are optional. If not provided both `call_func` and
-	 * `callable_userdata` together are used as the identity of the callable for hashing and comparison purposes.
-	 *
-	 * The hash returned by `hash_func` is cached, `hash_func` will not be called more than once per callable.
-	 *
-	 * `is_valid_func` is necessary if the validity of the callable can change before destruction.
-	 *
-	 * `free_func` is necessary if `callable_userdata` needs to be cleaned up when the callable is freed.
-	 */
 	void *callable_userdata;
 	void *token;
-
 	GDObjectInstanceID object_id;
-
 	GDExtensionCallableCustomCall call_func;
 	GDExtensionCallableCustomIsValid is_valid_func;
 	GDExtensionCallableCustomFree free_func;
-
 	GDExtensionCallableCustomHash hash_func;
 	GDExtensionCallableCustomEqual equal_func;
 	GDExtensionCallableCustomLessThan less_than_func;
-
 	GDExtensionCallableCustomToString to_string_func;
-} GDExtensionCallableCustomInfo; // Deprecated. Use GDExtensionCallableCustomInfo2 instead.
+} GDExtensionCallableCustomInfo; /* Deprecated in Godot 4.3. Use `GDExtensionCallableCustomInfo2` instead. */
 
+/* Only `call_func` and `token` are strictly required, however, `object_id` should be passed if its not a static method.
+ *
+ * `token` should point to an address that uniquely identifies the GDExtension (for example, the
+ * `GDExtensionClassLibraryPtr` passed to the entry symbol function.
+ *
+ * `hash_func`, `equal_func`, and `less_than_func` are optional. If not provided both `call_func` and
+ * `callable_userdata` together are used as the identity of the callable for hashing and comparison purposes.
+ *
+ * The hash returned by `hash_func` is cached, `hash_func` will not be called more than once per callable.
+ *
+ * `is_valid_func` is necessary if the validity of the callable can change before destruction.
+ *
+ * `free_func` is necessary if `callable_userdata` needs to be cleaned up when the callable is freed.
+ */
 typedef struct {
-	/* Only `call_func` and `token` are strictly required, however, `object_id` should be passed if its not a static method.
-	 *
-	 * `token` should point to an address that uniquely identifies the GDExtension (for example, the
-	 * `GDExtensionClassLibraryPtr` passed to the entry symbol function.
-	 *
-	 * `hash_func`, `equal_func`, and `less_than_func` are optional. If not provided both `call_func` and
-	 * `callable_userdata` together are used as the identity of the callable for hashing and comparison purposes.
-	 *
-	 * The hash returned by `hash_func` is cached, `hash_func` will not be called more than once per callable.
-	 *
-	 * `is_valid_func` is necessary if the validity of the callable can change before destruction.
-	 *
-	 * `free_func` is necessary if `callable_userdata` needs to be cleaned up when the callable is freed.
-	 */
 	void *callable_userdata;
 	void *token;
-
 	GDObjectInstanceID object_id;
-
 	GDExtensionCallableCustomCall call_func;
 	GDExtensionCallableCustomIsValid is_valid_func;
 	GDExtensionCallableCustomFree free_func;
-
 	GDExtensionCallableCustomHash hash_func;
 	GDExtensionCallableCustomEqual equal_func;
 	GDExtensionCallableCustomLessThan less_than_func;
-
 	GDExtensionCallableCustomToString to_string_func;
-
 	GDExtensionCallableCustomGetArgumentCount get_argument_count_func;
 } GDExtensionCallableCustomInfo2;
 
-/* SCRIPT INSTANCE EXTENSION */
-
-typedef void *GDExtensionScriptInstanceDataPtr; // Pointer to custom ScriptInstance native implementation.
-
+/* Pointer to custom ScriptInstance native implementation. */
+typedef void *GDExtensionScriptInstanceDataPtr;
 typedef GDExtensionBool (*GDExtensionScriptInstanceSet)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value);
 typedef GDExtensionBool (*GDExtensionScriptInstanceGet)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
 typedef const GDExtensionPropertyInfo *(*GDExtensionScriptInstanceGetPropertyList)(GDExtensionScriptInstanceDataPtr p_instance, uint32_t *r_count);
-typedef void (*GDExtensionScriptInstanceFreePropertyList)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionPropertyInfo *p_list); // Deprecated. Use GDExtensionScriptInstanceFreePropertyList2 instead.
+typedef void (*GDExtensionScriptInstanceFreePropertyList)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionPropertyInfo *p_list); /* Deprecated in Godot 4.3. Use `GDExtensionScriptInstanceFreePropertyList2` instead. */
 typedef void (*GDExtensionScriptInstanceFreePropertyList2)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionPropertyInfo *p_list, uint32_t p_count);
 typedef GDExtensionBool (*GDExtensionScriptInstanceGetClassCategory)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionPropertyInfo *p_class_category);
-
 typedef GDExtensionVariantType (*GDExtensionScriptInstanceGetPropertyType)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionBool *r_is_valid);
 typedef GDExtensionBool (*GDExtensionScriptInstanceValidateProperty)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionPropertyInfo *p_property);
-
 typedef GDExtensionBool (*GDExtensionScriptInstancePropertyCanRevert)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name);
 typedef GDExtensionBool (*GDExtensionScriptInstancePropertyGetRevert)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionVariantPtr r_ret);
-
 typedef GDExtensionObjectPtr (*GDExtensionScriptInstanceGetOwner)(GDExtensionScriptInstanceDataPtr p_instance);
 typedef void (*GDExtensionScriptInstancePropertyStateAdd)(GDExtensionConstStringNamePtr p_name, GDExtensionConstVariantPtr p_value, void *p_userdata);
 typedef void (*GDExtensionScriptInstanceGetPropertyState)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionScriptInstancePropertyStateAdd p_add_func, void *p_userdata);
-
 typedef const GDExtensionMethodInfo *(*GDExtensionScriptInstanceGetMethodList)(GDExtensionScriptInstanceDataPtr p_instance, uint32_t *r_count);
-typedef void (*GDExtensionScriptInstanceFreeMethodList)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionMethodInfo *p_list); // Deprecated. Use GDExtensionScriptInstanceFreeMethodList2 instead.
+typedef void (*GDExtensionScriptInstanceFreeMethodList)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionMethodInfo *p_list); /* Deprecated in Godot 4.3. Use `GDExtensionScriptInstanceFreeMethodList2` instead. */
 typedef void (*GDExtensionScriptInstanceFreeMethodList2)(GDExtensionScriptInstanceDataPtr p_instance, const GDExtensionMethodInfo *p_list, uint32_t p_count);
-
 typedef GDExtensionBool (*GDExtensionScriptInstanceHasMethod)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name);
-
 typedef GDExtensionInt (*GDExtensionScriptInstanceGetMethodArgumentCount)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionConstStringNamePtr p_name, GDExtensionBool *r_is_valid);
-
 typedef void (*GDExtensionScriptInstanceCall)(GDExtensionScriptInstanceDataPtr p_self, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionVariantPtr r_return, GDExtensionCallError *r_error);
-typedef void (*GDExtensionScriptInstanceNotification)(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what); // Deprecated. Use GDExtensionScriptInstanceNotification2 instead.
+typedef void (*GDExtensionScriptInstanceNotification)(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what); /* Deprecated in Godot 4.2. Use `GDExtensionScriptInstanceNotification2` instead. */
 typedef void (*GDExtensionScriptInstanceNotification2)(GDExtensionScriptInstanceDataPtr p_instance, int32_t p_what, GDExtensionBool p_reversed);
 typedef void (*GDExtensionScriptInstanceToString)(GDExtensionScriptInstanceDataPtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr r_out);
-
 typedef void (*GDExtensionScriptInstanceRefCountIncremented)(GDExtensionScriptInstanceDataPtr p_instance);
 typedef GDExtensionBool (*GDExtensionScriptInstanceRefCountDecremented)(GDExtensionScriptInstanceDataPtr p_instance);
-
 typedef GDExtensionObjectPtr (*GDExtensionScriptInstanceGetScript)(GDExtensionScriptInstanceDataPtr p_instance);
 typedef GDExtensionBool (*GDExtensionScriptInstanceIsPlaceholder)(GDExtensionScriptInstanceDataPtr p_instance);
-
 typedef void *GDExtensionScriptLanguagePtr;
-
 typedef GDExtensionScriptLanguagePtr (*GDExtensionScriptInstanceGetLanguage)(GDExtensionScriptInstanceDataPtr p_instance);
-
 typedef void (*GDExtensionScriptInstanceFree)(GDExtensionScriptInstanceDataPtr p_instance);
-
-typedef void *GDExtensionScriptInstancePtr; // Pointer to ScriptInstance.
-
+/* Pointer to ScriptInstance. */
+typedef void *GDExtensionScriptInstancePtr;
 typedef struct {
 	GDExtensionScriptInstanceSet set_func;
 	GDExtensionScriptInstanceGet get_func;
 	GDExtensionScriptInstanceGetPropertyList get_property_list_func;
 	GDExtensionScriptInstanceFreePropertyList free_property_list_func;
-
 	GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
 	GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
 	GDExtensionScriptInstanceGetOwner get_owner_func;
 	GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
 	GDExtensionScriptInstanceGetMethodList get_method_list_func;
 	GDExtensionScriptInstanceFreeMethodList free_method_list_func;
 	GDExtensionScriptInstanceGetPropertyType get_property_type_func;
-
 	GDExtensionScriptInstanceHasMethod has_method_func;
-
 	GDExtensionScriptInstanceCall call_func;
 	GDExtensionScriptInstanceNotification notification_func;
-
 	GDExtensionScriptInstanceToString to_string_func;
-
 	GDExtensionScriptInstanceRefCountIncremented refcount_incremented_func;
 	GDExtensionScriptInstanceRefCountDecremented refcount_decremented_func;
-
 	GDExtensionScriptInstanceGetScript get_script_func;
-
 	GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
 	GDExtensionScriptInstanceSet set_fallback_func;
 	GDExtensionScriptInstanceGet get_fallback_func;
-
 	GDExtensionScriptInstanceGetLanguage get_language_func;
-
 	GDExtensionScriptInstanceFree free_func;
-
-} GDExtensionScriptInstanceInfo; // Deprecated. Use GDExtensionScriptInstanceInfo3 instead.
+} GDExtensionScriptInstanceInfo; /* Deprecated in Godot 4.2. Use `GDExtensionScriptInstanceInfo3` instead. */
 
 typedef struct {
 	GDExtensionScriptInstanceSet set_func;
 	GDExtensionScriptInstanceGet get_func;
 	GDExtensionScriptInstanceGetPropertyList get_property_list_func;
 	GDExtensionScriptInstanceFreePropertyList free_property_list_func;
-	GDExtensionScriptInstanceGetClassCategory get_class_category_func; // Optional. Set to NULL for the default behavior.
-
+	/* Optional. Set to NULL for the default behavior. */
+	GDExtensionScriptInstanceGetClassCategory get_class_category_func;
 	GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
 	GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
 	GDExtensionScriptInstanceGetOwner get_owner_func;
 	GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
 	GDExtensionScriptInstanceGetMethodList get_method_list_func;
 	GDExtensionScriptInstanceFreeMethodList free_method_list_func;
 	GDExtensionScriptInstanceGetPropertyType get_property_type_func;
 	GDExtensionScriptInstanceValidateProperty validate_property_func;
-
 	GDExtensionScriptInstanceHasMethod has_method_func;
-
 	GDExtensionScriptInstanceCall call_func;
 	GDExtensionScriptInstanceNotification2 notification_func;
-
 	GDExtensionScriptInstanceToString to_string_func;
-
 	GDExtensionScriptInstanceRefCountIncremented refcount_incremented_func;
 	GDExtensionScriptInstanceRefCountDecremented refcount_decremented_func;
-
 	GDExtensionScriptInstanceGetScript get_script_func;
-
 	GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
 	GDExtensionScriptInstanceSet set_fallback_func;
 	GDExtensionScriptInstanceGet get_fallback_func;
-
 	GDExtensionScriptInstanceGetLanguage get_language_func;
-
 	GDExtensionScriptInstanceFree free_func;
-
-} GDExtensionScriptInstanceInfo2; // Deprecated. Use GDExtensionScriptInstanceInfo3 instead.
+} GDExtensionScriptInstanceInfo2; /* Deprecated in Godot 4.3. Use `GDExtensionScriptInstanceInfo3` instead. */
 
 typedef struct {
 	GDExtensionScriptInstanceSet set_func;
 	GDExtensionScriptInstanceGet get_func;
 	GDExtensionScriptInstanceGetPropertyList get_property_list_func;
 	GDExtensionScriptInstanceFreePropertyList2 free_property_list_func;
-	GDExtensionScriptInstanceGetClassCategory get_class_category_func; // Optional. Set to NULL for the default behavior.
-
+	/* Optional. Set to NULL for the default behavior. */
+	GDExtensionScriptInstanceGetClassCategory get_class_category_func;
 	GDExtensionScriptInstancePropertyCanRevert property_can_revert_func;
 	GDExtensionScriptInstancePropertyGetRevert property_get_revert_func;
-
 	GDExtensionScriptInstanceGetOwner get_owner_func;
 	GDExtensionScriptInstanceGetPropertyState get_property_state_func;
-
 	GDExtensionScriptInstanceGetMethodList get_method_list_func;
 	GDExtensionScriptInstanceFreeMethodList2 free_method_list_func;
 	GDExtensionScriptInstanceGetPropertyType get_property_type_func;
 	GDExtensionScriptInstanceValidateProperty validate_property_func;
-
 	GDExtensionScriptInstanceHasMethod has_method_func;
-
 	GDExtensionScriptInstanceGetMethodArgumentCount get_method_argument_count_func;
-
 	GDExtensionScriptInstanceCall call_func;
 	GDExtensionScriptInstanceNotification2 notification_func;
-
 	GDExtensionScriptInstanceToString to_string_func;
-
 	GDExtensionScriptInstanceRefCountIncremented refcount_incremented_func;
 	GDExtensionScriptInstanceRefCountDecremented refcount_decremented_func;
-
 	GDExtensionScriptInstanceGetScript get_script_func;
-
 	GDExtensionScriptInstanceIsPlaceholder is_placeholder_func;
-
 	GDExtensionScriptInstanceSet set_fallback_func;
 	GDExtensionScriptInstanceGet get_fallback_func;
-
 	GDExtensionScriptInstanceGetLanguage get_language_func;
-
 	GDExtensionScriptInstanceFree free_func;
-
 } GDExtensionScriptInstanceInfo3;
 
 typedef void (*GDExtensionWorkerThreadPoolGroupTask)(void *, uint32_t);
 typedef void (*GDExtensionWorkerThreadPoolTask)(void *);
-
-/* INITIALIZATION */
-
 typedef enum {
-	GDEXTENSION_INITIALIZATION_CORE,
-	GDEXTENSION_INITIALIZATION_SERVERS,
-	GDEXTENSION_INITIALIZATION_SCENE,
-	GDEXTENSION_INITIALIZATION_EDITOR,
-	GDEXTENSION_MAX_INITIALIZATION_LEVEL,
+	GDEXTENSION_INITIALIZATION_CORE = 0,
+	GDEXTENSION_INITIALIZATION_SERVERS = 1,
+	GDEXTENSION_INITIALIZATION_SCENE = 2,
+	GDEXTENSION_INITIALIZATION_EDITOR = 3,
+	GDEXTENSION_MAX_INITIALIZATION_LEVEL = 4,
 } GDExtensionInitializationLevel;
 
 typedef void (*GDExtensionInitializeCallback)(void *p_userdata, GDExtensionInitializationLevel p_level);
 typedef void (*GDExtensionDeinitializeCallback)(void *p_userdata, GDExtensionInitializationLevel p_level);
-
 typedef struct {
 	/* Minimum initialization level required.
-	 * If Core or Servers, the extension needs editor or game restart to take effect */
+	 * If Core or Servers, the extension needs editor or game restart to take effect
+	 */
 	GDExtensionInitializationLevel minimum_initialization_level;
 	/* Up to the user to supply when initializing */
 	void *userdata;
@@ -756,9 +716,7 @@ typedef struct {
 
 typedef void (*GDExtensionInterfaceFunctionPtr)();
 typedef GDExtensionInterfaceFunctionPtr (*GDExtensionInterfaceGetProcAddress)(const char *p_function_name);
-
-/*
- * Each GDExtension should define a C function that matches the signature of GDExtensionInitializationFunction,
+/* Each GDExtension should define a C function that matches the signature of GDExtensionInitializationFunction,
  * and export it so that it can be loaded via dlopen() or equivalent for the given platform.
  *
  * For example:
@@ -792,51 +750,52 @@ typedef GDExtensionInterfaceFunctionPtr (*GDExtensionInterfaceGetProcAddress)(co
  * and the function pointer typedef that shows its signature.
  */
 typedef GDExtensionBool (*GDExtensionInitializationFunction)(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization);
-
-/* INTERFACE */
-
 typedef struct {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t patch;
 	const char *string;
-} GDExtensionGodotVersion;
+} GDExtensionGodotVersion; /* Deprecated in Godot 4.5. Use `GDExtensionGodotVersion2` instead. */
 
 typedef struct {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t patch;
-	uint32_t hex; // Full version encoded as hexadecimal with one byte (2 hex digits) per number (e.g. for "3.1.12" it would be 0x03010C)
-	const char *status; // (e.g. "stable", "beta", "rc1", "rc2")
-	const char *build; // (e.g. "custom_build")
-	const char *hash; // Full Git commit hash.
-	uint64_t timestamp; // Git commit date UNIX timestamp in seconds, or 0 if unavailable.
-	const char *string; // (e.g. "Godot v3.1.4.stable.official.mono")
+	/* Full version encoded as hexadecimal with one byte (2 hex digits) per number (e.g. for "3.1.12" it would be 0x03010C) */
+	uint32_t hex;
+	/* (e.g. "stable", "beta", "rc1", "rc2") */
+	const char *status;
+	/* (e.g. "custom_build") */
+	const char *build;
+	/* Full Git commit hash. */
+	const char *hash;
+	/* Git commit date UNIX timestamp in seconds, or 0 if unavailable. */
+	uint64_t timestamp;
+	/* (e.g. "Godot v3.1.4.stable.official.mono") */
+	const char *string;
 } GDExtensionGodotVersion2;
 
 /* Called when starting the main loop. */
 typedef void (*GDExtensionMainLoopStartupCallback)();
-
 /* Called when shutting down the main loop. */
 typedef void (*GDExtensionMainLoopShutdownCallback)();
-
 /* Called for every frame iteration of the main loop. */
 typedef void (*GDExtensionMainLoopFrameCallback)();
-
 typedef struct {
-	// Will be called after Godot is started and is fully initialized.
+	/* Will be called after Godot is started and is fully initialized. */
 	GDExtensionMainLoopStartupCallback startup_func;
-	// Will be called before Godot is shutdown when it is still fully initialized.
+	/* Will be called before Godot is shutdown when it is still fully initialized. */
 	GDExtensionMainLoopShutdownCallback shutdown_func;
-	// Will be called for each process frame. This will run after all `_process()` methods on Node, and before `ScriptServer::frame()`.
-	// This is intended to be the equivalent of `ScriptLanguage::frame()` for GDExtension language bindings that don't use the script API.
+	/* Will be called for each process frame. This will run after all `_process()` methods on Node, and before `ScriptServer::frame()`.
+	 * This is intended to be the equivalent of `ScriptLanguage::frame()` for GDExtension language bindings that don't use the script API.
+	 */
 	GDExtensionMainLoopFrameCallback frame_func;
 } GDExtensionMainLoopCallbacks;
 
 /**
  * @name get_godot_version
  * @since 4.1
- * @deprecated in Godot 4.5. Use `get_godot_version2` instead.
+ * @deprecated Deprecated in Godot 4.5. Use `get_godot_version2` instead.
  *
  * Gets the Godot version that the GDExtension was loaded into.
  *
@@ -854,11 +813,10 @@ typedef void (*GDExtensionInterfaceGetGodotVersion)(GDExtensionGodotVersion *r_g
  */
 typedef void (*GDExtensionInterfaceGetGodotVersion2)(GDExtensionGodotVersion2 *r_godot_version);
 
-/* INTERFACE: Memory */
-
 /**
  * @name mem_alloc
  * @since 4.1
+ * @deprecated Deprecated in Godot 4.6. Does not allow explicitly requesting padding. Use `mem_alloc2` instead.
  *
  * Allocates memory.
  *
@@ -871,6 +829,7 @@ typedef void *(*GDExtensionInterfaceMemAlloc)(size_t p_bytes);
 /**
  * @name mem_realloc
  * @since 4.1
+ * @deprecated Deprecated in Godot 4.6. Does not allow explicitly requesting padding. Use `mem_realloc2` instead.
  *
  * Reallocates memory.
  *
@@ -884,6 +843,7 @@ typedef void *(*GDExtensionInterfaceMemRealloc)(void *p_ptr, size_t p_bytes);
 /**
  * @name mem_free
  * @since 4.1
+ * @deprecated Deprecated in Godot 4.6. Does not allow explicitly requesting padding. Use `mem_free2` instead.
  *
  * Frees memory.
  *
@@ -891,7 +851,43 @@ typedef void *(*GDExtensionInterfaceMemRealloc)(void *p_ptr, size_t p_bytes);
  */
 typedef void (*GDExtensionInterfaceMemFree)(void *p_ptr);
 
-/* INTERFACE: Godot Core */
+/**
+ * @name mem_alloc2
+ * @since 4.6
+ *
+ * Allocates memory.
+ *
+ * @param p_bytes The amount of memory to allocate in bytes.
+ * @param p_pad_align If true, the returned memory will have prepadding of at least 8 bytes.
+ *
+ * @return A pointer to the allocated memory, or NULL if unsuccessful.
+ */
+typedef void *(*GDExtensionInterfaceMemAlloc2)(size_t p_bytes, GDExtensionBool p_pad_align);
+
+/**
+ * @name mem_realloc2
+ * @since 4.6
+ *
+ * Reallocates memory.
+ *
+ * @param p_ptr A pointer to the previously allocated memory.
+ * @param p_bytes The number of bytes to resize the memory block to.
+ * @param p_pad_align If true, the returned memory will have prepadding of at least 8 bytes.
+ *
+ * @return A pointer to the allocated memory, or NULL if unsuccessful.
+ */
+typedef void *(*GDExtensionInterfaceMemRealloc2)(void *p_ptr, size_t p_bytes, GDExtensionBool p_pad_align);
+
+/**
+ * @name mem_free2
+ * @since 4.6
+ *
+ * Frees memory.
+ *
+ * @param p_ptr A pointer to the previously allocated memory.
+ * @param p_pad_align If true, the given memory was allocated with prepadding.
+ */
+typedef void (*GDExtensionInterfaceMemFree2)(void *p_ptr, GDExtensionBool p_pad_align);
 
 /**
  * @name print_error
@@ -991,8 +987,6 @@ typedef void (*GDExtensionInterfacePrintScriptErrorWithMessage)(const char *p_de
  * @return The size in bytes.
  */
 typedef uint64_t (*GDExtensionInterfaceGetNativeStructSize)(GDExtensionConstStringNamePtr p_name);
-
-/* INTERFACE: Variant */
 
 /**
  * @name variant_new_copy
@@ -1392,6 +1386,18 @@ typedef GDObjectInstanceID (*GDExtensionInterfaceVariantGetObjectInstanceId)(GDE
 typedef void (*GDExtensionInterfaceVariantGetTypeName)(GDExtensionVariantType p_type, GDExtensionUninitializedStringPtr r_name);
 
 /**
+ * @name variant_get_type_by_name
+ * @since 4.7
+ *
+ * Gets the Variant type by name.
+ *
+ * @param p_type_name The variant type name.
+ *
+ * @return The variant type for the given name; otherwise VARIANT_MAX if name is invalid.
+ */
+typedef GDExtensionVariantType (*GDExtensionInterfaceVariantGetTypeByName)(GDExtensionConstStringPtr p_type_name);
+
+/**
  * @name variant_can_convert
  * @since 4.1
  *
@@ -1446,10 +1452,11 @@ typedef GDExtensionTypeFromVariantConstructorFunc (*GDExtensionInterfaceGetVaria
  * @since 4.4
  *
  * Provides a function pointer for retrieving a pointer to a variant's internal value.
+ *
  * Access to a variant's internal value can be used to modify it in-place, or to retrieve its value without the overhead of variant conversion functions.
  * It is recommended to cache the getter for all variant types in a function table to avoid retrieval overhead upon use.
  *
- * @note Each function assumes the variant's type has already been determined and matches the function.
+ * Each function assumes the variant's type has already been determined and matches the function.
  * Invoking the function with a variant of a mismatched type has undefined behavior, and may lead to a segmentation fault.
  *
  * @param p_type The Variant type.
@@ -1636,8 +1643,6 @@ typedef void (*GDExtensionInterfaceVariantGetConstantValue)(GDExtensionVariantTy
  */
 typedef GDExtensionPtrUtilityFunction (*GDExtensionInterfaceVariantGetPtrUtilityFunction)(GDExtensionConstStringNamePtr p_function, GDExtensionInt p_hash);
 
-/* INTERFACE: String Utilities */
-
 /**
  * @name string_new_with_latin1_chars
  * @since 4.1
@@ -1708,7 +1713,7 @@ typedef void (*GDExtensionInterfaceStringNewWithLatin1CharsAndLen)(GDExtensionUn
 /**
  * @name string_new_with_utf8_chars_and_len
  * @since 4.1
- * @deprecated in Godot 4.3. Use `string_new_with_utf8_chars_and_len2` instead.
+ * @deprecated Deprecated in Godot 4.3. Use `string_new_with_utf8_chars_and_len2` instead.
  *
  * Creates a String from a UTF-8 encoded C string with the given length.
  *
@@ -1735,7 +1740,7 @@ typedef GDExtensionInt (*GDExtensionInterfaceStringNewWithUtf8CharsAndLen2)(GDEx
 /**
  * @name string_new_with_utf16_chars_and_len
  * @since 4.1
- * @deprecated in Godot 4.3. Use `string_new_with_utf16_chars_and_len2` instead.
+ * @deprecated Deprecated in Godot 4.3. Use `string_new_with_utf16_chars_and_len2` instead.
  *
  * Creates a String from a UTF-16 encoded C string with the given length.
  *
@@ -1796,7 +1801,7 @@ typedef void (*GDExtensionInterfaceStringNewWithWideCharsAndLen)(GDExtensionUnin
  * @param r_text A pointer to the buffer to hold the resulting data. If NULL is passed in, only the length will be computed.
  * @param p_max_write_length The maximum number of characters that can be written to r_text. It has no affect on the return value.
  *
- * @return The resulting encoded string length in characters (not bytes), not including a null terminator.
+ * @return The resulting encoded string length in characters, not including a null terminator. Characters that cannot be converted to Latin-1 are replaced with a space.
  */
 typedef GDExtensionInt (*GDExtensionInterfaceStringToLatin1Chars)(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length);
 
@@ -1812,7 +1817,7 @@ typedef GDExtensionInt (*GDExtensionInterfaceStringToLatin1Chars)(GDExtensionCon
  * @param r_text A pointer to the buffer to hold the resulting data. If NULL is passed in, only the length will be computed.
  * @param p_max_write_length The maximum number of characters that can be written to r_text. It has no affect on the return value.
  *
- * @return The resulting encoded string length in characters (not bytes), not including a null terminator.
+ * @return The resulting encoded string length in bytes (not characters), not including a null terminator.
  */
 typedef GDExtensionInt (*GDExtensionInterfaceStringToUtf8Chars)(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length);
 
@@ -1828,7 +1833,7 @@ typedef GDExtensionInt (*GDExtensionInterfaceStringToUtf8Chars)(GDExtensionConst
  * @param r_text A pointer to the buffer to hold the resulting data. If NULL is passed in, only the length will be computed.
  * @param p_max_write_length The maximum number of characters that can be written to r_text. It has no affect on the return value.
  *
- * @return The resulting encoded string length in characters (not bytes), not including a null terminator.
+ * @return The resulting encoded string length in 16-bit code units (not bytes or characters), not including a null terminator.
  */
 typedef GDExtensionInt (*GDExtensionInterfaceStringToUtf16Chars)(GDExtensionConstStringPtr p_self, char16_t *r_text, GDExtensionInt p_max_write_length);
 
@@ -1860,7 +1865,7 @@ typedef GDExtensionInt (*GDExtensionInterfaceStringToUtf32Chars)(GDExtensionCons
  * @param r_text A pointer to the buffer to hold the resulting data. If NULL is passed in, only the length will be computed.
  * @param p_max_write_length The maximum number of characters that can be written to r_text. It has no affect on the return value.
  *
- * @return The resulting encoded string length in characters (not bytes), not including a null terminator.
+ * @return The resulting encoded string length in characters (for UTF-32) or 16-bit code units (for UTF-16), depending on the wchar_t representation. Does not include a null terminator.
  */
 typedef GDExtensionInt (*GDExtensionInterfaceStringToWideChars)(GDExtensionConstStringPtr p_self, wchar_t *r_text, GDExtensionInt p_max_write_length);
 
@@ -1964,8 +1969,6 @@ typedef void (*GDExtensionInterfaceStringOperatorPlusEqC32str)(GDExtensionString
  */
 typedef GDExtensionInt (*GDExtensionInterfaceStringResize)(GDExtensionStringPtr p_self, GDExtensionInt p_resize);
 
-/* INTERFACE: StringName Utilities */
-
 /**
  * @name string_name_new_with_latin1_chars
  * @since 4.2
@@ -1974,7 +1977,7 @@ typedef GDExtensionInt (*GDExtensionInterfaceStringResize)(GDExtensionStringPtr 
  *
  * If `p_is_static` is true, then:
  * - The StringName will reuse the `p_contents` buffer instead of copying it.
- *   You must guarantee that the buffer remains valid for the duration of the application (e.g. string literal).
+ * - You must guarantee that the buffer remains valid for the duration of the application (e.g. string literal).
  * - You must not call a destructor for this StringName. Incrementing the initial reference once should achieve this.
  *
  * `p_is_static` is purely an optimization and can easily introduce undefined behavior if used wrong. In case of doubt, set it to false.
@@ -2008,8 +2011,6 @@ typedef void (*GDExtensionInterfaceStringNameNewWithUtf8Chars)(GDExtensionUninit
  */
 typedef void (*GDExtensionInterfaceStringNameNewWithUtf8CharsAndLen)(GDExtensionUninitializedStringNamePtr r_dest, const char *p_contents, GDExtensionInt p_size);
 
-/* INTERFACE: XMLParser Utilities */
-
 /**
  * @name xml_parser_open_buffer
  * @since 4.1
@@ -2025,8 +2026,6 @@ typedef void (*GDExtensionInterfaceStringNameNewWithUtf8CharsAndLen)(GDExtension
  * @see XMLParser::open_buffer()
  */
 typedef GDExtensionInt (*GDExtensionInterfaceXmlParserOpenBuffer)(GDExtensionObjectPtr p_instance, const uint8_t *p_buffer, size_t p_size);
-
-/* INTERFACE: FileAccess Utilities */
 
 /**
  * @name file_access_store_buffer
@@ -2056,8 +2055,6 @@ typedef void (*GDExtensionInterfaceFileAccessStoreBuffer)(GDExtensionObjectPtr p
  */
 typedef uint64_t (*GDExtensionInterfaceFileAccessGetBuffer)(GDExtensionConstObjectPtr p_instance, uint8_t *p_dst, uint64_t p_length);
 
-/* INTERFACE: Image Utilities */
-
 /**
  * @name image_ptrw
  * @since 4.3
@@ -2086,8 +2083,6 @@ typedef uint8_t *(*GDExtensionInterfaceImagePtrw)(GDExtensionObjectPtr p_instanc
  */
 typedef const uint8_t *(*GDExtensionInterfaceImagePtr)(GDExtensionObjectPtr p_instance);
 
-/* INTERFACE: WorkerThreadPool Utilities */
-
 /**
  * @name worker_thread_pool_add_native_group_task
  * @since 4.1
@@ -2106,7 +2101,7 @@ typedef const uint8_t *(*GDExtensionInterfaceImagePtr)(GDExtensionObjectPtr p_in
  *
  * @see WorkerThreadPool::add_group_task()
  */
-typedef int64_t (*GDExtensionInterfaceWorkerThreadPoolAddNativeGroupTask)(GDExtensionObjectPtr p_instance, GDExtensionWorkerThreadPoolGroupTask p_func, void *p_userdata, int p_elements, int p_tasks, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
+typedef int64_t (*GDExtensionInterfaceWorkerThreadPoolAddNativeGroupTask)(GDExtensionObjectPtr p_instance, GDExtensionWorkerThreadPoolGroupTask p_func, void *p_userdata, int32_t p_elements, int32_t p_tasks, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
 
 /**
  * @name worker_thread_pool_add_native_task
@@ -2123,8 +2118,6 @@ typedef int64_t (*GDExtensionInterfaceWorkerThreadPoolAddNativeGroupTask)(GDExte
  * @return The task ID.
  */
 typedef int64_t (*GDExtensionInterfaceWorkerThreadPoolAddNativeTask)(GDExtensionObjectPtr p_instance, GDExtensionWorkerThreadPoolTask p_func, void *p_userdata, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
-
-/* INTERFACE: Packed Array */
 
 /**
  * @name packed_byte_array_operator_index
@@ -2415,7 +2408,7 @@ typedef GDExtensionVariantPtr (*GDExtensionInterfaceArrayOperatorIndexConst)(GDE
 /**
  * @name array_ref
  * @since 4.1
- * @deprecated in Godot 4.5. use `Array::operator=` instead.
+ * @deprecated Deprecated in Godot 4.5. Removed from interface. Use copy constructor instead.
  *
  * Sets an Array to be a reference to another Array object.
  *
@@ -2436,8 +2429,6 @@ typedef void (*GDExtensionInterfaceArrayRef)(GDExtensionTypePtr p_self, GDExtens
  * @param p_script A pointer to a Script object (if p_type is GDEXTENSION_VARIANT_TYPE_OBJECT and the base class is extended by a script).
  */
 typedef void (*GDExtensionInterfaceArraySetTyped)(GDExtensionTypePtr p_self, GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstVariantPtr p_script);
-
-/* INTERFACE: Dictionary */
 
 /**
  * @name dictionary_operator_index
@@ -2480,8 +2471,6 @@ typedef GDExtensionVariantPtr (*GDExtensionInterfaceDictionaryOperatorIndexConst
  * @param p_value_script A pointer to a Script object (if p_value_type is GDEXTENSION_VARIANT_TYPE_OBJECT and the base class is extended by a script).
  */
 typedef void (*GDExtensionInterfaceDictionarySetTyped)(GDExtensionTypePtr p_self, GDExtensionVariantType p_key_type, GDExtensionConstStringNamePtr p_key_class_name, GDExtensionConstVariantPtr p_key_script, GDExtensionVariantType p_value_type, GDExtensionConstStringNamePtr p_value_class_name, GDExtensionConstVariantPtr p_value_script);
-
-/* INTERFACE: Object */
 
 /**
  * @name object_method_bind_call
@@ -2605,6 +2594,7 @@ typedef GDExtensionBool (*GDExtensionInterfaceObjectGetClassName)(GDExtensionCon
 /**
  * @name object_cast_to
  * @since 4.1
+ * @deprecated Deprecated in Godot 4.7. Use the `is_class` method on `Object` to check if an object can be cast instead. If true, the previous pointer can be reinterpreted as a pointer to the target type.
  *
  * Casts an Object to a different type.
  *
@@ -2667,8 +2657,6 @@ typedef GDExtensionBool (*GDExtensionInterfaceObjectHasScriptMethod)(GDExtension
  */
 typedef void (*GDExtensionInterfaceObjectCallScriptMethod)(GDExtensionObjectPtr p_object, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error);
 
-/* INTERFACE: Reference */
-
 /**
  * @name ref_get_object
  * @since 4.1
@@ -2692,12 +2680,10 @@ typedef GDExtensionObjectPtr (*GDExtensionInterfaceRefGetObject)(GDExtensionCons
  */
 typedef void (*GDExtensionInterfaceRefSetObject)(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object);
 
-/* INTERFACE: Script Instance */
-
 /**
  * @name script_instance_create
  * @since 4.1
- * @deprecated in Godot 4.2. Use `script_instance_create3` instead.
+ * @deprecated Deprecated in Godot 4.2. Use `script_instance_create3` instead.
  *
  * Creates a script instance that contains the given info and instance data.
  *
@@ -2711,7 +2697,7 @@ typedef GDExtensionScriptInstancePtr (*GDExtensionInterfaceScriptInstanceCreate)
 /**
  * @name script_instance_create2
  * @since 4.2
- * @deprecated in Godot 4.3. Use `script_instance_create3` instead.
+ * @deprecated Deprecated in Godot 4.3. Use `script_instance_create3` instead.
  *
  * Creates a script instance that contains the given info and instance data.
  *
@@ -2790,12 +2776,10 @@ typedef GDExtensionScriptInstanceDataPtr (*GDExtensionInterfaceObjectGetScriptIn
  */
 typedef void (*GDExtensionInterfaceObjectSetScriptInstance)(GDExtensionObjectPtr p_object, GDExtensionScriptInstanceDataPtr p_script_instance);
 
-/* INTERFACE: Callable */
-
 /**
  * @name callable_custom_create
  * @since 4.2
- * @deprecated in Godot 4.3. Use `callable_custom_create2` instead.
+ * @deprecated Deprecated in Godot 4.3. Use `callable_custom_create2` instead.
  *
  * Creates a custom Callable object from a function pointer.
  *
@@ -2834,12 +2818,10 @@ typedef void (*GDExtensionInterfaceCallableCustomCreate2)(GDExtensionUninitializ
  */
 typedef void *(*GDExtensionInterfaceCallableCustomGetUserData)(GDExtensionConstTypePtr p_callable, void *p_token);
 
-/* INTERFACE: ClassDB */
-
 /**
  * @name classdb_construct_object
  * @since 4.1
- * @deprecated in Godot 4.4. Use `classdb_construct_object2` instead.
+ * @deprecated Deprecated in Godot 4.4. Use `classdb_construct_object3` instead.
  *
  * Constructs an Object of the requested class.
  *
@@ -2854,6 +2836,7 @@ typedef GDExtensionObjectPtr (*GDExtensionInterfaceClassdbConstructObject)(GDExt
 /**
  * @name classdb_construct_object2
  * @since 4.4
+ * @deprecated Deprecated in Godot 4.7. Use `classdb_construct_object3` instead.
  *
  * Constructs an Object of the requested class.
  *
@@ -2866,6 +2849,23 @@ typedef GDExtensionObjectPtr (*GDExtensionInterfaceClassdbConstructObject)(GDExt
  * @return A pointer to the newly created Object.
  */
 typedef GDExtensionObjectPtr (*GDExtensionInterfaceClassdbConstructObject2)(GDExtensionConstStringNamePtr p_classname);
+
+/**
+ * @name classdb_construct_object3
+ * @since 4.7
+ *
+ * Constructs an Object of the requested class.
+ *
+ * The passed class must be a built-in godot class, or an already-registered extension class. In both cases, object_set_instance() should be called to fully initialize the object.
+ * If the type is a subtype of RefCounted, it already has a refcount of 1. The caller must take ownership the refcount and is responsible for decrementing it again when the object is no longer needed.
+ *
+ * "NOTIFICATION_POSTINITIALIZE" must be sent after construction.
+ *
+ * @param p_classname A pointer to a StringName with the class name.
+ *
+ * @return A pointer to the newly created Object.
+ */
+typedef GDExtensionObjectPtr (*GDExtensionInterfaceClassdbConstructObject3)(GDExtensionConstStringNamePtr p_classname);
 
 /**
  * @name classdb_get_method_bind
@@ -2884,6 +2884,7 @@ typedef GDExtensionMethodBindPtr (*GDExtensionInterfaceClassdbGetMethodBind)(GDE
 /**
  * @name classdb_get_class_tag
  * @since 4.1
+ * @deprecated Deprecated in Godot 4.7. No longer needed. Use the `is_class` method on `Object` instead.
  *
  * Gets a pointer uniquely identifying the given built-in class in the ClassDB.
  *
@@ -2893,12 +2894,10 @@ typedef GDExtensionMethodBindPtr (*GDExtensionInterfaceClassdbGetMethodBind)(GDE
  */
 typedef void *(*GDExtensionInterfaceClassdbGetClassTag)(GDExtensionConstStringNamePtr p_classname);
 
-/* INTERFACE: ClassDB Extension */
-
 /**
  * @name classdb_register_extension_class
  * @since 4.1
- * @deprecated in Godot 4.2. Use `classdb_register_extension_class4` instead.
+ * @deprecated Deprecated in Godot 4.2. Use `classdb_register_extension_class6` instead.
  *
  * Registers an extension class in the ClassDB.
  *
@@ -2914,7 +2913,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass)(GDExtensionCla
 /**
  * @name classdb_register_extension_class2
  * @since 4.2
- * @deprecated in Godot 4.3. Use `classdb_register_extension_class4` instead.
+ * @deprecated Deprecated in Godot 4.3. Use `classdb_register_extension_class6` instead.
  *
  * Registers an extension class in the ClassDB.
  *
@@ -2930,7 +2929,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass2)(GDExtensionCl
 /**
  * @name classdb_register_extension_class3
  * @since 4.3
- * @deprecated in Godot 4.4. Use `classdb_register_extension_class4` instead.
+ * @deprecated Deprecated in Godot 4.4. Use `classdb_register_extension_class6` instead.
  *
  * Registers an extension class in the ClassDB.
  *
@@ -2946,7 +2945,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass3)(GDExtensionCl
 /**
  * @name classdb_register_extension_class4
  * @since 4.4
- * @deprecated in Godot 4.5. Use `classdb_register_extension_class5` instead.
+ * @deprecated Deprecated in Godot 4.5. Use `classdb_register_extension_class6` instead.
  *
  * Registers an extension class in the ClassDB.
  *
@@ -2962,6 +2961,7 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass4)(GDExtensionCl
 /**
  * @name classdb_register_extension_class5
  * @since 4.5
+ * @deprecated Deprecated in Godot 4.7. Use `classdb_register_extension_class6` instead.
  *
  * Registers an extension class in the ClassDB.
  *
@@ -2973,6 +2973,21 @@ typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass4)(GDExtensionCl
  * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo5 struct.
  */
 typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass5)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo5 *p_extension_funcs);
+
+/**
+ * @name classdb_register_extension_class6
+ * @since 4.7
+ *
+ * Registers an extension class in the ClassDB.
+ *
+ * Provided struct can be safely freed once the function returns.
+ *
+ * @param p_library A pointer the library received by the GDExtension's entry point function.
+ * @param p_class_name A pointer to a StringName with the class name.
+ * @param p_parent_class_name A pointer to a StringName with the parent class name.
+ * @param p_extension_funcs A pointer to a GDExtensionClassCreationInfo6 struct.
+ */
+typedef void (*GDExtensionInterfaceClassdbRegisterExtensionClass6)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo6 *p_extension_funcs);
 
 /**
  * @name classdb_register_extension_class_method
@@ -3197,5 +3212,3 @@ typedef void (*GDExtensionInterfaceRegisterMainLoopCallbacks)(GDExtensionClassLi
 #ifdef __cplusplus
 }
 #endif
-
-#endif // GDEXTENSION_INTERFACE_H

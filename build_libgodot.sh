@@ -24,6 +24,7 @@ debug=1
 dev_build=0
 force_host_rebuild=0
 update_api=0
+build_host=1
 simulator=0
 library_type="auto"
 profiler_type=""
@@ -41,6 +42,7 @@ case "$host_system" in
         cpus="$(sysctl -n hw.logicalcpu)"
         target_platform="macos"
         lib_suffix="dylib"
+        host_build_options="use_volk=yes angle=no"
     ;;
     *)
         echo "System $host_system is unsupported"
@@ -82,6 +84,9 @@ do
         --no-target)
             target_platform=""
         ;;
+        --no-host)
+            build_host=0
+        ;;
         --simulator)
             simulator=1
         ;;
@@ -98,7 +103,7 @@ do
             profiler_type="${1:-}"
         ;;
         *)
-            echo "Usage: $0 [--host-debug] [--host-rebuild] [--host-debug] [--host-release] [--debug] [--release] [--update-api] [--target <target platform>] [--target-arch <target platform>] [--profiler-type <profiler type>]"
+            echo "Usage: $0 [--host-debug] [--host-rebuild] [--host-release] [--no-host] [--debug] [--release] [--update-api] [--target <target platform>] [--target-arch <target platform>] [--profiler-type <profiler type>]"
             exit 1
         ;;
     esac
@@ -110,11 +115,13 @@ target_build_options="$target_build_options opengl3=yes"
 if [ "$target_platform" = "ios" ]
 then
     target="template_release"
-    target_build_options="$target_build_options vulkan=no metal=yes library_type=static_library"
+    target_build_options="$target_build_options vulkan=no sdl=yes builtin_sdl=yes library_type=static_library"
     lib_suffix="a"
     if [ $simulator -eq 1 ]
     then
-        target_build_options="$target_build_options ios_simulator=true"
+        target_build_options="$target_build_options ios_simulator=true metal=no"
+    else
+        target_build_options="$target_build_options metal=yes"
     fi
     if [ "$target_arch" = "" ]
     then
@@ -213,11 +220,19 @@ target_godot="$GODOT_DIR/bin/libgodot.$target_godot_suffix.$lib_suffix"
 
 mkdir -p $BUILD_DIR
 
-if [ ! -x $host_godot ] || [ $force_host_rebuild -eq 1 ]
+if [ "$build_host" -eq 0 ]; then
+    if [ "$update_api" -eq 1 ] || [ ! -s "$BUILD_GDEXTENSION_DIR/extension_api.json" ] || \
+        [ ! -s "$BUILD_GDEXTENSION_DIR/gdextension_interface.h" ]; then
+        echo '--no-host requires a previously generated API/header and cannot update API.'
+        exit 1
+    fi
+fi
+
+if [ "$build_host" -eq 1 ] && { [ ! -x $host_godot ] || [ $force_host_rebuild -eq 1 ]; }
 then
     rm -f $host_godot
     cd $GODOT_DIR
-    scons p=$host_platform target=$host_target $host_build_options
+    scons p=$host_platform target=$host_target $host_build_options "cache_path=${SCONS_CACHE:-}"
     cp -vf $host_godot $BUILD_DIR/godot
 fi
 
@@ -225,10 +240,12 @@ if [ $update_api -eq 1 ] || [ ! -f $BUILD_GDEXTENSION_DIR/extension_api.json ]
 then
     mkdir -p $BUILD_GDEXTENSION_DIR
     cd $BUILD_GDEXTENSION_DIR
-    $host_godot --headless --dump-extension-api
-    cp -v $GODOT_DIR/core/extension/gdextension_interface.h $BUILD_GDEXTENSION_DIR/
+    $host_godot --headless --dump-extension-api --dump-gdextension-interface --dump-gdextension-interface-json
+    python3 "$BASE_DIR/tools/prepare_godotcpp_api.py" \
+        "$BUILD_GDEXTENSION_DIR/extension_api.json" \
+        "$BUILD_GDEXTENSION_DIR/godotcpp_extension_api.json"
 
-    echo "Successfully updated the GDExtension API."
+    echo "Successfully updated the GDExtension API and interface headers."
 fi
 
 if [ "$target_platform" = "" ]
@@ -238,7 +255,7 @@ then
 fi
 
 cd $GODOT_DIR
-scons p=$target_platform target=$target arch=$target_arch $target_build_options swappy=no
+scons p=$target_platform target=$target arch=$target_arch $target_build_options swappy=no "cache_path=${SCONS_CACHE:-}"
 
 function godot_to_android_arch() {
     godot_arch="$1"

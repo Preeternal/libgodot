@@ -1,6 +1,6 @@
 [submodule "godot"]
 	path = godot
-	url = https://github.com/migeran/godot.git
+	url = git@github.com:Preeternal/godot.git
 
 [submodule "SwiftGodot"]
 	path = SwiftGodot

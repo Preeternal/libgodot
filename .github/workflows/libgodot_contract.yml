@@ -1,0 +1,156 @@
+name: LibGodot 4.7 Contract
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  SCONS_VERSION: 4.10.1
+  SCONS_CACHE: ${{ github.workspace }}/.scons_cache
+  PYTHONHASHSEED: '0'
+
+jobs:
+  contract:
+    name: macOS API/header/binding contract
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Checkout superproject
+        uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - name: Checkout build submodules over HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global url."https://github.com/".insteadOf git@github.com:
+          git submodule sync -- godot godot-cpp
+          git submodule update --init godot godot-cpp
+
+      - name: Setup Python and SCons
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install SCons
+        shell: bash
+        run: python -m pip install --disable-pip-version-check "scons==${SCONS_VERSION}"
+
+      - name: Download same-run macOS library, editor and contract
+        uses: actions/download-artifact@v8
+        with:
+          name: libgodot-macos
+          path: ci-input/macos
+
+      - name: Verify provenance and stage the generated contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/artifact_manifest.py ci-input/macos --verify
+          python3 tools/check_native_library.py --verify \
+            --platform macos --target template_debug --library-type shared_library \
+            --revision "$(git -C godot rev-parse HEAD)" \
+            --library ci-input/macos/libgodot.macos.template_debug.arm64.dylib \
+            --symbols ci-input/macos/symbols.txt --manifest ci-input/macos/manifest.json
+          mkdir -p build/gdextension
+          cp ci-input/macos/*.json ci-input/macos/gdextension_interface.h build/gdextension/
+          chmod +x ci-input/macos/godot-editor
+          python3 godot/tests/libgodot/check_api.py \
+            build/gdextension/extension_api.json --output api-validation.json
+          cmp libgodot_framework/libgodot/gdextension_interface.h build/gdextension/gdextension_interface.h
+          python3 tools/stage_public_headers.py build/public-headers
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ci_tools.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_android_cpp_abi.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 tools/test_ios_renderers.py -v
+
+      - name: Compile public C ABI header
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' '#include <libgodot/libgodot.h>' \
+            'int main(void) { return 0; }' | \
+            clang -arch arm64 -std=c11 -Wall -Wextra -Werror \
+            -Ilibgodot_framework -x c -fsyntax-only -
+
+      - name: Restore binding object cache
+        uses: actions/cache/restore@v6
+        id: cache
+        with:
+          path: .scons_cache
+          key: l1-v2-contract-cpp-${{ runner.arch }}-${{ github.sha }}
+          restore-keys: l1-v2-contract-cpp-${{ runner.arch }}-
+
+      - name: Generate and compile godot-cpp bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          scons -C godot-cpp \
+            gdextension_dir="$GITHUB_WORKSPACE/build/gdextension" \
+            custom_api_file="$GITHUB_WORKSPACE/build/gdextension/godotcpp_extension_api.json" \
+            platform=macos arch=arm64 target=template_debug generate_bindings=yes -j"$(sysctl -n hw.logicalcpu)" \
+            2>&1 | tee godot-cpp.log
+          clang++ -arch arm64 -std=c++17 -Wall -Wextra -Werror -fsyntax-only \
+            -Ilibgodot_framework -Ilibgodot_framework/libgodot \
+            -isystem godot-cpp/include -isystem godot-cpp/gen/include \
+            -isystem build/gdextension \
+            samples/cpp_sample/src/main.cpp
+
+      - name: Compile and run C ABI failure cleanup and recreate smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          ci-input/macos/godot-editor --headless --editor \
+            --path godot/tests/libgodot/project --import 2>&1 | tee fixture-import.log
+          mkdir -p build/lifecycle-headers/core/extension
+          cp build/public-headers/libgodot.h build/lifecycle-headers/core/extension/
+          cp build/public-headers/gdextension_interface.h build/lifecycle-headers/core/extension/
+          clang++ -arch arm64 -std=c++17 -Wall -Wextra -Werror \
+            -Ibuild/lifecycle-headers godot/tests/libgodot/lifecycle_host.cc -o build/lifecycle_host
+          build/lifecycle_host \
+            "$GITHUB_WORKSPACE/ci-input/macos/libgodot.macos.template_debug.arm64.dylib" \
+            "$GITHUB_WORKSPACE/godot/tests/libgodot/project" 2>&1 | tee lifecycle.log
+          grep -q G1_LIFECYCLE_OK lifecycle.log
+          ci-input/macos/godot-editor --headless \
+            --path godot/tests/libgodot/project --quit-after 1 2>&1 | tee dns-shutdown.log
+
+      - name: Verify generated contract identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(python3 -c 'import json; print(json.load(open("build/gdextension/extension_api.json"))["header"]["version_minor"])')" = 7
+          test -s build/gdextension/gdextension_interface.h
+          test -s godot-cpp/bin/libgodot-cpp.macos.template_debug.arm64.a
+          shasum -a 256 build/gdextension/*.json build/gdextension/*.h \
+            godot-cpp/bin/libgodot-cpp.macos.template_debug.arm64.a | tee contract-sha256.txt
+          git diff --check
+          mkdir -p ci-results/contract
+          cp api-validation.json godot-cpp.log contract-sha256.txt fixture-import.log \
+            lifecycle.log dns-shutdown.log ci-results/contract/
+          python3 tools/artifact_manifest.py ci-results/contract --profile contract \
+            --flags 'macOS arm64 template_debug bindings; generated public C ABI lifecycle_host; same-run library; -Wall -Wextra -Werror; third-party headers -isystem'
+
+      - name: Save binding object cache
+        uses: actions/cache/save@v6
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: .scons_cache
+          key: l1-v2-contract-cpp-${{ runner.arch }}-${{ github.sha }}
+
+      - name: Upload contract diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: libgodot-contract
+          path: |
+            ci-results/contract/
+            api-validation.json
+            godot-cpp.log
+            contract-sha256.txt
+            fixture-import.log
+            lifecycle.log
+            dns-shutdown.log
+          retention-days: 14
+          if-no-files-found: warn

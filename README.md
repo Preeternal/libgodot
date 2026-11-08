@@ -27,6 +27,9 @@ This screenshot shows an iOS application displaying 4 Godot Engine Windows each 
 
 ## Quickstart
 
+See [Continuous integration](doc/CI.md) for build validation, artifacts and
+local release packaging.
+
 This repository is set up for easy testing of LibGodot.
 
 Execute the following commands
@@ -61,6 +64,54 @@ cd build
 To test the SwiftUI sample, just open the ios_sample project in XCode 15.1+, build it and run on any iOS device. (iOS Simulator is not supported due to Godot limitations.)
 
 Note: You will need to select a development team in the XCode project to sign the application.
+
+### Android C++ SDK headers
+
+`build_godotcpp_android.sh` packages each ABI's library with its matching source
+and generated headers:
+
+```text
+godot-cpp-android/
+  arm64-v8a/
+    libgodot-cpp.a
+    include/
+    abi-layout.json
+  armeabi-v7a/
+    libgodot-cpp.a
+    include/
+    abi-layout.json
+```
+
+Consumers must select the headers and library using the same `ANDROID_ABI`:
+
+```cmake
+set_target_properties(godot-cpp PROPERTIES
+    IMPORTED_LOCATION "${LIBGODOT_CPP_DIR}/${ANDROID_ABI}/libgodot-cpp.a")
+target_include_directories(godot-cpp INTERFACE
+    "${LIBGODOT_CPP_DIR}/${ANDROID_ABI}/include")
+```
+
+This replaces the shared top-level `include` directory used by earlier packages.
+Generated builtin wrappers contain architecture-dependent storage sizes; mixing
+ARM32 headers with ARM64 libraries can corrupt memory. Packaging checks compare
+each ABI's generated storage and C++ `sizeof` values with the selected API dump.
+The SDK uses single precision (`float_32` / `float_64`).
+
+### iOS renderer policy
+
+Device builds use Metal/Mobile. Simulator builds use OpenGL ES 3/Compatibility
+and explicitly set `metal=no`. Hosts must select the driver and rendering method
+before creating the engine instance:
+
+| Target | Rendering driver | Rendering method | Native layer |
+| --- | --- | --- | --- |
+| iPhone/iPad device | `metal` | `mobile` | `CAMetalLayer` |
+| iOS Simulator | `opengl3` | `gl_compatibility` | `CAEAGLLayer` |
+
+`renderer-slices.json` accompanies packaged frameworks with binary hashes,
+architectures, Mach-O platform/minimum OS, linked frameworks and compiled driver
+evidence. Runtime remains `UNVERIFIED` until tested separately for each target.
+Simulator Compatibility results do not establish device Metal correctness or speed.
 
 ## Migeran LibGodot Design
 
