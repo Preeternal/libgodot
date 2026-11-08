@@ -179,7 +179,8 @@ class NoRecordTest(unittest.TestCase):
             data = {"profile": "ios-packages", "audio_variant": "with-recording", "revisions": {}, "run": {}, "files": {}}
             path = directory / "artifacts-manifest.json"
             path.write_text(json.dumps(data))
-            with mock.patch.object(artifact_manifest, "revisions", return_value={}), mock.patch.dict(os.environ, {"LIBGODOT_AUDIO_VARIANT": "no-record"}):
+            # The synthetic artifact has no run metadata; isolate it from Actions.
+            with mock.patch.object(artifact_manifest, "revisions", return_value={}), mock.patch.dict(os.environ, {"LIBGODOT_AUDIO_VARIANT": "no-record"}, clear=True):
                 with self.assertRaisesRegex(ValueError, "Expected no-record"):
                     artifact_manifest.verify(directory)
                 data["audio_variant"] = "no-record"
